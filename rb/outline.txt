@@ -1,3 +1,47 @@
+
+
+Error values in Go aren't special, they are just values like any other, and so you have the entire language at your disposal.
+- Rob Pike, co-designer of Go
+
+There can be only one exception at any moment in flight. They require immediate an exclusive attention. The exception comes to the fore, you must handle it right now.
+    - Andrei Alexandrescu, D language maintainer, C++ expert
+
+
+https://dave.cheney.net/2014/11/04/error-handling-vs-exceptions-redux
+
+
+
+Language-level exceptions introduce implicit control flow, a potential source of software defects related to reliability.
+...
+Testing a program’s behavior in exceptional situations can be difficult because such situations, often called run-time errors, must be systematically and artificially introduced.
+...
+The desired faults must still be injected during testing while the program is running.
+
+
+
+An IBM survey [Cristian 1982, 1987] reported that up to two-thirds of a program may be devoted to handling exceptional situations.
+
+We performed a similar survey, examining a suite of open-source Java programs ranging in size from 4,000 to 1,600,000 lines of code.
+We found that while exception handling is a lesser fraction of all source code than was previously reported, it is still significant.
+
+We found that between 1% and 5% of program text in our survey was comprised of exception-handling catch and finally blocks.
+Between 3% and 46% of the program text was transitively reachable from catch and finally blocks, which often contain calls to cleanup methods.
+
+While it is possible to handle run-time errors without using exceptions and to use exceptions for purposes other than run-time error handling,
+common Java programming practice links the two together.
+
+Sinha and Harrold [2000] found that on average 8.1% of methods contained exception-handling constructs,
+while the JESP tool [Ryder et al. 2000] found that 16% of methods contain some kind of exception handling.
+
+Later work [Sinha et al. 2004] found patterns associated with complex implicit control flow in all of the subject programs it studied.
+
+
+https://web.archive.org/web/20150923211739/http://www.cs.virginia.edu/~weimer/p/weimer-toplas2008.pdf
+
+
+
+
+
 https://ruby-doc.org/core-2.7.0/Exception.html
 
 Class Exception and its subclasses are used to communicate between Kernel#raise and rescue statements in begin ... end blocks.
