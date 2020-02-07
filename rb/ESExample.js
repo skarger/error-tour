@@ -1,7 +1,12 @@
 try {
   console.log(`Parsed ${parseInt('1000')}.`);
-  console.log(`Parsed ${parseInt('A grand')}.`);
-  console.log(`JSON ${JSON.parse('<DOCTYPE html>')}`);
+
+  let grand = 'A grand';
+  let parsed = parseInt(grand);
+  console.log(`Parsed ${parsed}.`);
+  if (isNaN(grand)) {
+    throw `Could not parse "${grand}"`;
+  }
 } catch(e) {
   console.log(`Error: ${e}`);
 } finally {
