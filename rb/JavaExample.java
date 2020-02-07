@@ -1,12 +1,12 @@
 public class JavaExample {
     public static void main(String[] args) {
       try {
-        System.out.println("try 1: parsed " + Integer.parseInt("1000"));
-        System.out.println("try 2: parsed " + Integer.parseInt("A grand"));
+        System.out.println("Parsed " + Integer.parseInt("1000"));
+        System.out.println("Parsed " + Integer.parseInt("A grand"));
       } catch (NumberFormatException e) {
-        System.out.println("catch: " + e);
+        System.out.println("Error: " + e + ".");
       } finally {
-        System.out.println("finally: Have a nice day.");
+        System.out.println("Have a nice day.");
       }
     }
 }
