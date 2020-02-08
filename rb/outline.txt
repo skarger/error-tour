@@ -84,6 +84,74 @@ We can register a window.onerror event listener that will run in case of an unca
 
 https://levelup.gitconnected.com/5-things-you-dont-know-about-try-catch-finally-in-javascript-5d661996d77c
 
+
+In a distributed world, preventing failure is not an option. Instead, we need strategies for mitigating failure.
+
+Avdi Grimm, Andrzej Kryzywda
+
+Sagas Pattern
+
+For specific applications, it may be possible to alleviate the problems by relaxing the requirement
+that a long-lived transaction be executed as an atomic action. In other words, without sacrificing
+the consistency of the database, it may be possible for certain long-lived transactions
+to release their resources before they complete, thus permitting other waiting transactions to proceed.
+
+To amend partial executions, each saga transaction T should be provided with a compensating transaction C.
+The compensating transaction undoes, from a semantic point of view, any of the actions performed by T,
+but does not necessarily return the database to the state that existed when the execution of T began.
+
+Sagas
+Hector Garcia-Molina, Kenneth Salem
+Princeton, 1987
+
+class Holiday
+def initialize(hotel, flight, car)
+@hotel = hotel
+@flight = flight
+@car = car
+end
+
+def book
+@hotel. book
+@flight.book
+@car. book
+rescue HotelBookingFailed
+
+rescue FlightBookingFailed
+@hotel. cancel
+rescue CarNotAvailable
+@flight.cancel
+@hotel. cancel
+end
+end
+
+There is no such thing as a distributed transaction.
+But sometimes we find a need to make our code act as if they exist.
+One way to do this is with Sagas: a way to package a series of steps
+along with the compensating actions that will be needed if one of the steps fails.
+
+Sometimes the compensation might be as straightforward as canceling or rolling-back a transaction.
+Other actions, like sending an email, can’t be “taken back”, and we need a different sort of compensation…
+like sending a new email that says “please ignore that last email”!
+The point is that we embrace the possibility of failures, and make plans for how to address them.
+
+https://www.rubytapas.com/2019/12/12/sagas/
+
+
+
+
+There is a famous lawsuit where Oracle sued Google over Google's use of the Java platform within Android
+without purchasing a license from Oracle.
+
+There was an internal Google email that became public during that case:
+
+What we've actually been asked to do (by [Google founders] Larry [Page] and Sergey [Brin])
+is to investigate what technical alternatives exist to Java for Android and Chrome.
+We've been over a bunch of these, and think they all suck.
+We conclude that we need to negotiate a license for Java under the terms we need.
+
+Tim Lindholm, Google engineer, internal email 2010
+
 https://ruby-doc.org/core-2.7.0/Exception.html
 
 Class Exception and its subclasses are used to communicate between Kernel#raise and rescue statements in begin ... end blocks.
