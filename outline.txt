@@ -140,17 +140,8 @@ https://www.rubytapas.com/2019/12/12/sagas/
 
 
 
-There is a famous lawsuit where Oracle sued Google over Google's use of the Java platform within Android
-without purchasing a license from Oracle.
+https://github.com/salsify/adrs/blob/master/common/2019-03-22-graphql-errors.md
 
-There was an internal Google email that became public during that case:
-
-What we've actually been asked to do (by [Google founders] Larry [Page] and Sergey [Brin])
-is to investigate what technical alternatives exist to Java for Android and Chrome.
-We've been over a bunch of these, and think they all suck.
-We conclude that we need to negotiate a license for Java under the terms we need.
-
-Tim Lindholm, Google engineer, internal email 2010
 
 https://ruby-doc.org/core-2.7.0/Exception.html
 
