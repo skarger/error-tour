@@ -144,6 +144,9 @@ https://github.com/salsify/salsify_graphql-server#error-reporting
 https://github.com/salsify/adrs/blob/master/common/2019-03-22-graphql-errors.md
 
 
+https://github.com/rails/rails/blob/master/actionpack/lib/action_dispatch/middleware/show_exceptions.rb
+
+
 https://ruby-doc.org/core-2.7.0/Exception.html
 
 Class Exception and its subclasses are used to communicate between Kernel#raise and rescue statements in begin ... end blocks.
