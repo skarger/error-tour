@@ -1,4 +1,23 @@
+Intro
+  Why?
+  What is quality?
+  What are errors?
+  Programs have inputs, outputs, side effects, and internal logic.
+  Errors often happen on all.
+    Unexpected inputs
+    Problems with side effects - DB queries DB writes, HTTP requests.
+    Internal logic with unexpected data flow. (Lower-level version of unexpected inputs.)
+    Exceptional environmental conditions: out of memory, disk failure, incorrect configuration.
 
+What do we want as far as errors?
+
+1. Errors don't happen!
+In other words, the software gracefully works with a wide range of real-world behavior.
+
+2. When errors do happen, we
+  * Provide information to users.
+  * Notify engineers/managers/PM/CS that something went wrong.
+  * We rectify the problem.
 
 Error values in Go aren't special, they are just values like any other, and so you have the entire language at your disposal.
 - Rob Pike, co-designer of Go
