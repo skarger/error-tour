@@ -10,4 +10,5 @@ Router.map(function() {
   this.route('result-type');
   this.route('sound-principles');
   this.route('prevention');
+  this.route('route-level');
 });
