@@ -12,4 +12,5 @@ Router.map(function() {
   this.route('prevention');
   this.route('route-level');
   this.route('other-route');
+  this.route('error-substates');
 });
