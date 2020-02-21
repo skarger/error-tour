@@ -1,0 +1,223 @@
+Error values in Go aren't special, they are just values like any other, and so you have the entire language at your disposal.
+- Rob Pike, co-designer of Go
+
+There can be only one exception at any moment in flight. They require immediate an exclusive attention. The exception comes to the fore, you must handle it right now.
+    - Andrei Alexandrescu, D language maintainer, C++ expert
+
+
+https://dave.cheney.net/2014/11/04/error-handling-vs-exceptions-redux
+
+
+
+Language-level exceptions introduce implicit control flow, a potential source of software defects related to reliability.
+...
+Testing a program’s behavior in exceptional situations can be difficult because such situations, often called run-time errors, must be systematically and artificially introduced.
+...
+The desired faults must still be injected during testing while the program is running.
+
+
+
+An IBM survey [Cristian 1982, 1987] reported that up to two-thirds of a program may be devoted to handling exceptional situations.
+
+We performed a similar survey, examining a suite of open-source Java programs ranging in size from 4,000 to 1,600,000 lines of code.
+We found that while exception handling is a lesser fraction of all source code than was previously reported, it is still significant.
+
+We found that between 1% and 5% of program text in our survey was comprised of exception-handling catch and finally blocks.
+Between 3% and 46% of the program text was transitively reachable from catch and finally blocks, which often contain calls to cleanup methods.
+
+While it is possible to handle run-time errors without using exceptions and to use exceptions for purposes other than run-time error handling,
+common Java programming practice links the two together.
+
+Sinha and Harrold [2000] found that on average 8.1% of methods contained exception-handling constructs,
+while the JESP tool [Ryder et al. 2000] found that 16% of methods contain some kind of exception handling.
+
+Later work [Sinha et al. 2004] found patterns associated with complex implicit control flow in all of the subject programs it studied.
+
+
+ Exception handlers are typicallylexically scoped and may be quite labyrinthine.
+
+https://web.archive.org/web/20150923211739/http://www.cs.virginia.edu/~weimer/p/weimer-toplas2008.pdf
+
+I love reading postmortems. ... [T]here are a handful of postmortem patterns that I keep seeing over and over again.
+
+Proper error handling code is hard. Bugs in error handling code are a major cause of bad problems.
+This means that the probability of having sequential bugs, where an error causes buggy error handling code to run, isn't just the independent probabilities of the individual errors multiplied.
+It's common to have cascading failures cause a serious outage.
+
+There's a sense in which this is obvious -- error handling is generally regarded as being hard.
+If I mention this to people they'll tell me how obvious it is that a disproportionate number of serious postmortems come out of bad error handling and cascading failures where errors are repeatedly not handled correctly.
+But despite this being "obvious", it's not so obvious that sufficient test and static analysis effort are devoted to making sure that error handling works.
+
+For more on this, Ding Yuan et al. have a great paper and talk: Simple Testing Can Prevent Most Critical Failures: An Analysis of Production Failures in Distributed Data-Intensive Systems.
+The authors define a critical failure as something that can take down a whole cluster or cause data corruption,
+and then look at a couple hundred bugs in Cassandra, HBase, HDFS, MapReduce, and Redis, to find 48 critical failures.
+They then look at the causes of those failures and find that most bugs were due to bad error handling.
+92% of those failures are actually from errors that are handled incorrectly.
+
+Drilling down further, 25% of bugs are from simply ignoring an error,
+8% are from catching the wrong exception,
+2% are from incomplete TODOs,
+and another 23% are "easily detectable", which are defined as cases where "the error handling logic of a non-fatal error was so wrong
+that any statement coverage testing or more careful code reviews by the developers would have caught the bugs".
+
+By the way, this is one reason I don't mind Go style error handling, despite the common complaint that the error checking code is cluttering up the main code path.
+If you care about building robust systems, the error checking code is the main code!
+
+https://danluu.com/postmortem-lessons/
+
+
+We found the majority of catastrophic failures could easily have been prevented by performing simple testing on error handling code – the last line of defense – even without an understanding of the software design.
+
+https://www.usenix.org/system/files/conference/osdi14/osdi14-paper-yuan.pdf
+
+
+If we have a finally block, the return statement inside try and catch block are not executed. It will always hit the finally block.
+
+If we use let or const to declare a variable in the try block, it will not be available to catch or finally. This is because these variable declarations are block-scoped.
+But if we use var instead of let or const, then it will be available inside the catch because var is function scoped, and the declaration will be hoisted.
+
+If an exception happens in “scheduled” code, like setTimeout, then try..catch won’t catch it.
+
+We can register a window.onerror event listener that will run in case of an uncaught error. This will not handle the error but detect it— you would need to supply your own try…catch inside of it.
+
+https://levelup.gitconnected.com/5-things-you-dont-know-about-try-catch-finally-in-javascript-5d661996d77c
+
+
+In a distributed world, preventing failure is not an option. Instead, we need strategies for mitigating failure.
+
+Avdi Grimm, Andrzej Kryzywda
+
+Sagas Pattern
+
+For specific applications, it may be possible to alleviate the problems by relaxing the requirement
+that a long-lived transaction be executed as an atomic action. In other words, without sacrificing
+the consistency of the database, it may be possible for certain long-lived transactions
+to release their resources before they complete, thus permitting other waiting transactions to proceed.
+
+To amend partial executions, each saga transaction T should be provided with a compensating transaction C.
+The compensating transaction undoes, from a semantic point of view, any of the actions performed by T,
+but does not necessarily return the database to the state that existed when the execution of T began.
+
+Sagas
+Hector Garcia-Molina, Kenneth Salem
+Princeton, 1987
+
+class Holiday
+def initialize(hotel, flight, car)
+@hotel = hotel
+@flight = flight
+@car = car
+end
+
+def book
+@hotel. book
+@flight.book
+@car. book
+rescue HotelBookingFailed
+
+rescue FlightBookingFailed
+@hotel. cancel
+rescue CarNotAvailable
+@flight.cancel
+@hotel. cancel
+end
+end
+
+There is no such thing as a distributed transaction.
+But sometimes we find a need to make our code act as if they exist.
+One way to do this is with Sagas: a way to package a series of steps
+along with the compensating actions that will be needed if one of the steps fails.
+
+Sometimes the compensation might be as straightforward as canceling or rolling-back a transaction.
+Other actions, like sending an email, can’t be “taken back”, and we need a different sort of compensation…
+like sending a new email that says “please ignore that last email”!
+The point is that we embrace the possibility of failures, and make plans for how to address them.
+
+https://www.rubytapas.com/2019/12/12/sagas/
+
+
+
+
+https://github.com/salsify/salsify_graphql-server#error-reporting
+https://github.com/salsify/adrs/blob/master/common/2019-03-22-graphql-errors.md
+
+
+https://github.com/rails/rails/blob/master/actionpack/lib/action_dispatch/middleware/show_exceptions.rb
+
+
+https://ruby-doc.org/core-2.7.0/Exception.html
+
+Class Exception and its subclasses are used to communicate between Kernel#raise and rescue statements in begin ... end blocks.
+
+An Exception object carries information about an exception:
+    Its type (the exception's class).
+    An optional descriptive message.
+    Optional backtrace information.
+
+
+With no arguments, raises the exception in $! or raises a RuntimeError if $! is nil.
+```
+> $!
+=> nil
+
+> raise
+Traceback (most recent call last):
+        ...
+        1: from (irb):3
+RuntimeError ()
+```
+
+With a single String argument, raises a RuntimeError with the string as a message.
+
+```
+> raise "a single string"
+Traceback (most recent call last):
+        ...
+        1: from (irb):5:in `rescue in irb_binding'
+RuntimeError (a single string)
+```
+
+`raise` sets the value of the `$!` variable.
+```
+> $!
+=> #<RuntimeError: a single string>
+```
+
+Otherwise, the first parameter should be an Exception class (or another object that returns an Exception object when sent an exception message).
+The optional second parameter sets the message associated with the exception (accessible via Exception#message),
+and the third parameter is an array of callback information (accessible via Exception#backtrace).
+
+
+
+begin
+  # code that might raise
+rescue
+  # handle exception
+end
+
+
+If you are inside a method, you do not need to use begin or end unless you wish to limit the scope of rescued exceptions:
+```
+def my_method
+  # ...
+rescue
+  # ...
+end
+```
+
+```
+[0, 1, 2].map do |i|
+  10 / i
+rescue ZeroDivisionError
+  nil
+end
+```
+
+
+Rescuing Exceptions is not idiomatic
+
+We don’t want to rescue Exceptions, however. Exceptions that aren’t StandardErrors are reserved for things like Interrupt when we hit Ctrl-C, and NoMemoryError.
+
+Exceptions that are StandardErrors are what a normal Ruby program are supposed to use.
+
+https://thoughtbot.com/blog/rescue-standarderror-not-exception

@@ -1,0 +1,91 @@
+<div local-class="grid">
+    <div>
+        <h1>Java</h1>
+        <pre>
+            <code>
+public class JavaExample {
+  public static void main(String[] args) {
+    try {
+      System.out.println("Parsed " + Integer.parseInt("1000"));
+      System.out.println("Parsed " + Integer.parseInt("A grand"));
+    } catch (NumberFormatException e) {
+      System.out.println("Error: " + e + ".");
+    } finally {
+      System.out.println("Have a nice day.");
+    }
+  }
+}
+          </code>
+        </pre>
+    </div>
+
+    <div>
+        <h1>Ruby</h1>
+        <pre>
+            <code>
+begin
+  puts "Parsed #{Integer('1000')}."
+
+  # 'A grand'.to_i would return nil
+  puts "Parsed #{Integer('A grand')}."
+rescue ArgumentError => e
+  puts "Error: #{e}."
+ensure
+  puts "Have a nice day."
+end
+          </code>
+        </pre>
+    </div>
+
+    <div>
+        <h1>JavaScript</h1>
+        <pre>
+          <code>
+try {
+  console.log(`Parsed ${parseInt('1000')}.`);
+
+  let grand = 'A grand';
+  let parsed = parseInt(grand);
+  console.log(`Parsed ${parsed}.`);
+
+  // JS does not have a int parsing function that throws
+  if (isNaN(grand)) {
+    throw `Could not parse "${grand}"`;
+  }
+} catch(e) {
+  console.log(`Error: ${e}`);
+} finally {
+  console.log('Have a nice day.');
+}
+          </code>
+        </pre>
+    </div>
+
+    <div>
+        <h2>Output</h2>
+        <pre>
+Parsed 1000
+Error: java.lang.NumberFormatException: For input string: "A grand".
+Have a nice day.
+        </pre>
+    </div>
+
+    <div>
+        <h2>Output</h2>
+        <pre>
+Parsed 1000.
+Error: invalid value for Integer(): "A grand".
+Have a nice day.
+        </pre>
+    </div>
+
+    <div>
+        <h2>Output</h2>
+        <pre>
+Parsed 1000.
+Parsed NaN.
+Error: Could not parse "A grand"
+Have a nice day.
+        </pre>
+    </div>
+</div>

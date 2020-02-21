@@ -1,0 +1,68 @@
+<h1>Checking return value</h1>
+<div local-class="grid">
+    <div>
+        <h2>Code</h2>
+        <pre>
+        <code>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+int main(void)
+{
+    printf("Testing return value from malloc...\n");
+    int *p1 = malloc(4*sizeof(int));  // allocates enough for an array of 4 int
+
+    if(p1) {
+        printf("4 bytes successfully allocated and set:\n");
+        for(int n=0; n&lt;4; ++n) // populate the array
+            p1[n] = n*n;
+        for(int n=0; n&lt;4; ++n) // print it back out
+            printf("p1[%d] == %d\n", n, p1[n]);
+    }
+
+    free(p1);
+
+    printf("\nmacOS C library writes malloc error output to stderr:\n");
+
+    // 150,000,000,000,000 bytes == 150 terabytes
+    long bytes = 150000000000000;
+    int *p2 = malloc(bytes);
+
+    printf("\nBut program keeps running, the above is not an exception!\n");
+    if(p2) {
+        printf("\nAllocated %ld bytes. Who lives like this?", bytes);
+    } else {
+        printf("\nmalloc returned NULL, could not allocate %ld bytes.\n", bytes);
+    }
+
+    printf("Have a nice day.");
+    return 0;
+}
+        </code>
+    </pre>
+    </div>
+
+    <div>
+        <h2>Output</h2>
+        <pre>
+        <code>
+Testing return value from malloc...
+4 bytes successfully allocated and set:
+p1[0] == 0
+p1[1] == 1
+p1[2] == 4
+p1[3] == 9
+
+macOS C library writes malloc error output to stderr:
+a.out(48064,0x7fffb6bc8380) malloc: *** mach_vm_map(size=150000000000000) failed (error code=3)
+*** error: can't allocate region
+*** set a breakpoint in malloc_error_break to debug
+
+But program keeps running, the above is not an exception!
+
+malloc returned NULL, could not allocate 150000000000000 bytes.
+Have a nice day.
+        </code>
+    </pre>
+    </div>
+</div>

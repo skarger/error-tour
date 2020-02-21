@@ -1,0 +1,46 @@
+<h1>Checking errno</h1>
+<div local-class="grid">
+    <div>
+        <h2>Code</h2>
+        <div>
+            <pre>
+                <code>
+#include &lt;stdio.h&gt;
+#include &lt;errno.h&gt;
+
+int main(void)
+{
+   printf("Testing errno after trying to open file...\n");
+   FILE * pf;
+   pf = fopen ("does-not-exist.txt", "r");
+
+   if (pf == NULL) {
+      fprintf(stderr, "Value of errno: %d\n", errno);
+      perror("Error printed by perror");
+   } else {
+      fclose (pf);
+   }
+   printf("\nAgain, no exception raised when opening non-existent file, program still running.\n");
+
+   printf("Have a nice day.");
+   return 0;
+}
+                </code>
+            </pre>
+        </div>
+    </div>
+
+    <div>
+        <h2>Output</h2>
+        <pre>
+            <code>
+Testing errno after trying to open file...
+Value of errno: 2
+Error printed by perror: No such file or directory
+
+Again, no exception raised when opening non-existent file, program still running.
+Have a nice day.
+            </code>
+        </pre>
+    </div>
+</div>

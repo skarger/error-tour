@@ -1,0 +1,25 @@
+<p>
+  On a thrown error or rejected promise returned from the <code>articles.overview</code> route's
+  <code>model</code> hook (or <code>beforeModel</code> or <code>afterModel</code>) Ember will
+  look for an error template or route in the following order:
+</p>
+
+<ul>
+  <li><code>articles.overview-error</code></li>
+  <li><code>articles.error</code> or <code>articles-error</code></li>
+  <li><code>error</code> or <code>application-error</code></li>
+</ul>
+
+<p>
+  If one of the above is found, the router will immediately transition into that
+  substate (without updating the URL).
+
+  The "reason" for the error (i.e. the exception thrown or the promise reject value)
+  will be passed to that error state as its <code>model</code>.
+</p>
+
+<div class="links">
+  <LinkTo @route="route-level">Route Level Error Template</LinkTo>
+  <LinkTo @route="other-route">Other Route</LinkTo>
+</div>
+{{outlet}}

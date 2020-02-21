@@ -1,0 +1,6 @@
+**/elm-stuff
+**/*.class
+**/tmp
+**/log
+**/a.out
+**/.generators
