@@ -1,11 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <string.h>
 
 int main(void)
 {
-    printf("1. Testing return value from malloc...\n");
+    printf("Testing return value from malloc...\n");
     int *p1 = malloc(4*sizeof(int));  // allocates enough for an array of 4 int
 
     if(p1) {
@@ -28,25 +26,9 @@ int main(void)
     if(p2) {
         printf("\nAllocated %ld bytes. Who lives like this?", bytes);
     } else {
-        printf("\nCould not allocate %ld bytes.\n", bytes);
+        printf("\nmalloc returned NULL, could not allocate %ld bytes.\n", bytes);
     }
 
-
-   printf("\n\n2. Testing errno after trying to open file...\n");
-   FILE * pf;
-   int errnum;
-   pf = fopen ("does-not-exist.txt", "r");
-
-   if (pf == NULL) {
-      errnum = errno;
-      fprintf(stderr, "Value of errno: %d\n", errno);
-      perror("Error printed by perror");
-      fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
-   } else {
-      fclose (pf);
-   }
-   printf("\nAgain, no exception raised when opening non-existent file, program still running.\n");
-   printf("Have a nice day.");
-
-   return 0;
+    printf("Have a nice day.");
+    return 0;
 }

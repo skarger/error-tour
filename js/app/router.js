@@ -14,4 +14,6 @@ Router.map(function() {
   this.route('other-route');
   this.route('error-substates');
   this.route('exceptions');
+  this.route('return-value');
+  this.route('errno');
 });
