@@ -13,4 +13,5 @@ Router.map(function() {
   this.route('route-level');
   this.route('other-route');
   this.route('error-substates');
+  this.route('exceptions');
 });
