@@ -212,3 +212,12 @@ rescue ZeroDivisionError
   nil
 end
 ```
+
+
+Rescuing Exceptions is not idiomatic
+
+We don’t want to rescue Exceptions, however. Exceptions that aren’t StandardErrors are reserved for things like Interrupt when we hit Ctrl-C, and NoMemoryError.
+
+Exceptions that are StandardErrors are what a normal Ruby program are supposed to use.
+
+https://thoughtbot.com/blog/rescue-standarderror-not-exception
