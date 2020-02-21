@@ -2,3 +2,5 @@
 **/*.class
 **/tmp
 **/log
+**/a.out
+**/.generators
