@@ -107,4 +107,8 @@ History
     and one major difference from C they share is the notion of exceptions.
 
 Exceptions
+    See examples. A lot of research about exceptions analyzes Java, so it's shown here, but as we can see Ruby and JS are similar.
 
+    General idea: run some code. If something goes wrong, stop execution, go run some other code.
+    This happens without the programmer checking whether something went wrong.
+    This construction also has the finally/ensure block to run some "resolution" code in all cases.
