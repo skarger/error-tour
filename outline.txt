@@ -56,7 +56,7 @@ Is this the status quo? Have we accomplished this already?
     So why is that? What brought us to this point, and what would we need to change to do better?
 
 History
-    C style error handling
+    C style error handling. No exceptions.
 
     $ gcc -Wall no-exceptions.c
 
@@ -85,4 +85,26 @@ History
 
     Again, no exception raised when opening non-existent file, program still running.
     Have a nice day.
+
+
+    Aside from error handling, C has a variety of other limitations, and people were motivated to create programming languages that improved upon it.
+
+    C: 1972
+
+    C++: 1985
+
+    Python: 1990
+
+    Ruby: 1995
+    Java: 1995
+    JavaScript: 1995
+    PHP: 1995 * included try/catch, but originally not exceptions.
+
+    C#: 2000
+
+    Surely these weren't the only languages created in that era, but they've had a lot of influence
+    on modern web and enterprise development,
+    and one major difference from C they share is the notion of exceptions.
+
+Exceptions
 
