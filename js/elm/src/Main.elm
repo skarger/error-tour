@@ -1,10 +1,10 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, button, div, pre, span, text, textarea)
-import Html.Attributes exposing (cols, placeholder, rows)
+import Html exposing (Html, button, div, h2, p, pre, span, text, textarea)
+import Html.Attributes exposing (cols, placeholder, rows, style)
 import Html.Events exposing (onClick, onInput)
-import Json.Decode exposing (Decoder, decodeString, field, map, string)
+import Json.Decode as JD
 
 
 main =
@@ -19,7 +19,8 @@ main =
 type alias Model =
     { input : String
     , status : Status
-    , cat : Maybe Cat
+    , errorMessage : String
+    , cat : Maybe KittyCat
     }
 
 
@@ -29,7 +30,7 @@ type Status
     | Success
 
 
-type alias Cat =
+type alias KittyCat =
     { name : String
     }
 
@@ -48,33 +49,35 @@ update msg model =
         ParseJSON ->
             let
                 parseResult =
-                    decodeString catDecoder model.input
+                    JD.decodeString catDecoder model.input
             in
             case parseResult of
                 Ok cat ->
                     ( { model | cat = Just cat, status = Success }, Cmd.none )
 
-                Err _ ->
-                    ( { model | status = Failure }, Cmd.none )
+                Err e ->
+                    ( { model | cat = Nothing, status = Failure, errorMessage = JD.errorToString e }, Cmd.none )
 
 
-catDecoder : Decoder Cat
+catDecoder : JD.Decoder KittyCat
 catDecoder =
-    map Cat
-        (field "name" string)
+    JD.map KittyCat
+        (JD.field "name" JD.string)
 
 
 view : Model -> Html Msg
 view model =
-    div []
+    div [ style "margin" "16px" ]
         [ div [] <| inputView model
+        , div [] <| catView model
         , div [] <| resultView model
         ]
 
 
 inputView : Model -> List (Html Msg)
 inputView model =
-    [ textarea [ rows 20, cols 40, placeholder "Enter JSON...", onInput EnterJSON ] []
+    [ h2 [] [ text "Kitty Cat Parser" ]
+    , textarea [ rows 20, cols 40, placeholder "JSON format: { \"name\": \"<cat name>\" }", onInput EnterJSON ] []
     , div []
         [ span [] [ text "Input:" ]
         , pre [] [ text model.input ]
@@ -87,28 +90,36 @@ resultView : Model -> List (Html Msg)
 resultView model =
     case model.status of
         Failure ->
-            [ text "Could not parse cat from given input." ]
+            [ p [] [ text <| "Could not parse given input: " ]
+            , p [] [ text model.errorMessage ]
+            , p [] [ text "Expected format: { \"name\": \"<cat name>\" }" ]
+            ]
 
         Success ->
-            [ text <| "Parse succeeded. Cat name: " ++ getCatName model.cat ]
+            [ text <| "Parse succeeded." ]
 
         Waiting ->
             [ text "" ]
 
 
-getCatName : Maybe Cat -> String
+catView : Model -> List (Html Msg)
+catView model =
+    [ p [] [ text <| "Cat name: " ++ getCatName model.cat ] ]
+
+
+getCatName : Maybe KittyCat -> String
 getCatName mcat =
     case mcat of
         Just cat ->
             cat.name
 
         Nothing ->
-            ""
+            "(not set)"
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { input = "", status = Waiting, cat = Nothing }
+    ( { input = "", status = Waiting, errorMessage = "", cat = Nothing }
     , Cmd.none
     )
 
