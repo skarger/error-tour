@@ -20,7 +20,7 @@ type alias Model =
     { input : String
     , status : Status
     , errorMessage : String
-    , cat : Maybe KittyCat
+    , catName : String
     }
 
 
@@ -28,11 +28,6 @@ type Status
     = Waiting
     | Failure
     | Success
-
-
-type alias KittyCat =
-    { name : String
-    }
 
 
 type Msg
@@ -44,25 +39,23 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         EnterJSON str ->
-            ( { model | cat = model.cat, status = Waiting, input = str }, Cmd.none )
+            ( { model | status = model.status, input = str }, Cmd.none )
 
         ParseJSON ->
             let
                 parseResult =
-                    JD.decodeString catDecoder model.input
+                    JD.decodeString (JD.field "name" JD.string) model.input
             in
             case parseResult of
-                Ok cat ->
-                    ( { model | cat = Just cat, status = Success }, Cmd.none )
+                Ok name ->
+                    ( { model | catName = name, status = Success }, Cmd.none )
 
                 Err e ->
-                    ( { model | cat = Nothing, status = Failure, errorMessage = JD.errorToString e }, Cmd.none )
+                    ( { model | catName = notSet, status = Failure, errorMessage = JD.errorToString e }, Cmd.none )
 
 
-catDecoder : JD.Decoder KittyCat
-catDecoder =
-    JD.map KittyCat
-        (JD.field "name" JD.string)
+notSet =
+    "(not set)"
 
 
 view : Model -> Html Msg
@@ -90,7 +83,7 @@ resultView : Model -> List (Html Msg)
 resultView model =
     case model.status of
         Failure ->
-            [ p [] [ text <| "Could not parse given input: " ]
+            [ p [] [ text <| "Could not parse given input." ]
             , p [] [ text model.errorMessage ]
             , p [] [ text "Expected format: { \"name\": \"<cat name>\" }" ]
             ]
@@ -104,22 +97,12 @@ resultView model =
 
 catView : Model -> List (Html Msg)
 catView model =
-    [ p [] [ text <| "Cat name: " ++ getCatName model.cat ] ]
-
-
-getCatName : Maybe KittyCat -> String
-getCatName mcat =
-    case mcat of
-        Just cat ->
-            cat.name
-
-        Nothing ->
-            "(not set)"
+    [ p [] [ text <| "Cat name: " ++ model.catName ] ]
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { input = "", status = Waiting, errorMessage = "", cat = Nothing }
+    ( { input = "", status = Waiting, errorMessage = "", catName = notSet }
     , Cmd.none
     )
 
