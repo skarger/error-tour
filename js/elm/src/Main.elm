@@ -1,9 +1,10 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, button, div, h2, p, pre, span, text, textarea)
-import Html.Attributes exposing (cols, placeholder, rows, style)
+import Html exposing (Html, button, div, h2, img, p, pre, span, text, textarea)
+import Html.Attributes exposing (cols, height, placeholder, rows, src, style)
 import Html.Events exposing (onClick, onInput)
+import Http
 import Json.Decode as JD
 
 
@@ -21,6 +22,7 @@ type alias Model =
     , status : Status
     , errorMessage : String
     , catName : String
+    , imageUrl : String
     }
 
 
@@ -33,6 +35,7 @@ type Status
 type Msg
     = EnterJSON String
     | ParseJSON
+    | FetchData (Result Http.Error String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -48,10 +51,40 @@ update msg model =
             in
             case parseResult of
                 Ok name ->
-                    ( { model | catName = name, status = Success }, Cmd.none )
+                    ( { model | catName = name, status = Success }, fetchData name )
 
                 Err e ->
                     ( { model | catName = notSet, status = Failure, errorMessage = JD.errorToString e }, Cmd.none )
+
+        FetchData httpResult ->
+            case httpResult of
+                Ok imageUrl ->
+                    ( { model | imageUrl = imageUrl, status = Success }, Cmd.none )
+
+                Err e ->
+                    case e of
+                        Http.BadUrl string ->
+                            ( { model | errorMessage = "Bad URL: " ++ string, status = Failure }, Cmd.none )
+
+                        Http.Timeout ->
+                            ( { model | errorMessage = "HTTP timeout", status = Failure }, Cmd.none )
+
+                        Http.NetworkError ->
+                            ( { model | errorMessage = "HTTP network error", status = Failure }, Cmd.none )
+
+                        Http.BadStatus int ->
+                            ( { model | errorMessage = "HTTP response status: " ++ String.fromInt int, status = Failure }, Cmd.none )
+
+                        Http.BadBody string ->
+                            ( { model | errorMessage = "Unexpected response body: " ++ string, status = Failure }, Cmd.none )
+
+
+fetchData : String -> Cmd Msg
+fetchData name =
+    Http.get
+        { url = "https://s3.amazonaws.com/stephen.karger-data/" ++ String.toLower name ++ ".json"
+        , expect = Http.expectJson FetchData (JD.field "imageUrl" JD.string)
+        }
 
 
 notSet =
@@ -89,7 +122,9 @@ resultView model =
             ]
 
         Success ->
-            [ text <| "Parse succeeded." ]
+            [ p [] [ text <| "Parse succeeded." ]
+            , p [] [ img [ src model.imageUrl, height 300 ] [] ]
+            ]
 
         Waiting ->
             [ text "" ]
@@ -102,7 +137,7 @@ catView model =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { input = "", status = Waiting, errorMessage = "", catName = notSet }
+    ( { input = "", status = Waiting, errorMessage = "", catName = notSet, imageUrl = "" }
     , Cmd.none
     )
 
