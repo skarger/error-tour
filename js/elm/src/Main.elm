@@ -1,7 +1,7 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, button, div, h2, img, p, pre, span, text, textarea)
+import Html exposing (Html, button, div, h2, img, p, text, textarea)
 import Html.Attributes exposing (cols, height, placeholder, rows, src, style)
 import Html.Events exposing (onClick, onInput)
 import Http
@@ -61,10 +61,10 @@ update msg model =
         ParseJSON ->
             case model.userInput |> JD.decodeString (JD.field "name" JD.string) of
                 Ok name ->
-                    ( { model | status = ParseSucceeded, catName = name }, fetchData name )
+                    ( { model | status = ParseSucceeded, catName = name, imageUrl = "" }, fetchData name )
 
                 Err e ->
-                    ( { model | status = ParseFailed, catName = "(not set)", errorMessage = JD.errorToString e }, Cmd.none )
+                    ( { model | status = ParseFailed, catName = "(not set)", imageUrl = "", errorMessage = JD.errorToString e }, Cmd.none )
 
         FetchData httpResult ->
             case httpResult of
@@ -87,73 +87,78 @@ handleHttpError : Model -> Http.Error -> Model
 handleHttpError model error =
     case error of
         Http.BadUrl string ->
-            { model | status = DownloadFailed, errorMessage = "Bad URL: " ++ string }
+            { model | status = DownloadFailed, imageUrl = "", errorMessage = "Bad URL: " ++ string }
 
         Http.Timeout ->
-            { model | status = DownloadFailed, errorMessage = "HTTP timeout" }
+            { model | status = DownloadFailed, imageUrl = "", errorMessage = "HTTP timeout" }
 
         Http.NetworkError ->
-            { model | status = DownloadFailed, errorMessage = "HTTP network error" }
+            { model | status = DownloadFailed, imageUrl = "", errorMessage = "HTTP network error" }
 
         Http.BadStatus int ->
-            { model | status = DownloadFailed, errorMessage = "HTTP response status: " ++ String.fromInt int }
+            { model | status = DownloadFailed, imageUrl = "", errorMessage = "HTTP response status: " ++ String.fromInt int }
 
         Http.BadBody string ->
-            { model | status = DownloadFailed, errorMessage = "Unexpected response body: " ++ string }
+            { model | status = DownloadFailed, imageUrl = "", errorMessage = "Unexpected response body: " ++ string }
 
 
 view : Model -> Html Msg
 view model =
     div [ style "margin" "16px" ]
-        [ div [] <| inputView model
-        , div [] <| resultView model
+        [ topRowView model
         ]
 
 
-inputView : Model -> List (Html Msg)
-inputView model =
-    [ h2 [] [ text "Kitty Cat Parser" ]
-    , textarea [ rows 20, cols 40, placeholder "JSON format: { \"name\": \"<cat name>\" }", onInput EnterText ] []
-    , div []
-        [ span [] [ text "Input:" ]
-        , pre [] [ text model.userInput ]
+topRowView model =
+    div [ style "display" "flex" ] [ inputView, resultView model ]
+
+
+inputView : Html Msg
+inputView =
+    div [ style "margin-right" "16px" ]
+        [ h2 [] [ text "Kitty Cat Parser" ]
+        , textarea [ rows 8, cols 40, placeholder "JSON format: { \"name\": \"<cat name>\" }", onInput EnterText ] []
+        , p [] [ button [ onClick ParseJSON ] [ text "Parse and fetch" ] ]
         ]
-    , button [ onClick ParseJSON ] [ text "Parse and fetch" ]
-    ]
 
 
-resultView : Model -> List (Html Msg)
+resultView : Model -> Html Msg
 resultView model =
-    case model.status of
-        ParseFailed ->
-            [ p [] [ text <| "Could not parse given input." ]
-            , p [] [ text model.errorMessage ]
-            , p [] [ text "Expected format: { \"name\": \"<cat name>\" }" ]
-            ]
+    let
+        resultRows =
+            case model.status of
+                ParseFailed ->
+                    [ p [] [ text <| "Could not parse given input." ]
+                    , p [] [ text model.errorMessage ]
+                    , p [] [ text "Expected format: { \"name\": \"<cat name>\" }" ]
+                    ]
 
-        ParseSucceeded ->
-            [ p [] [ text <| "Parse succeeded." ]
-            , catView model
-            ]
+                ParseSucceeded ->
+                    [ successfulParseView model.catName ]
 
-        DownloadFailed ->
-            [ p [] [ text <| "Parse succeeded." ]
-            , catView model
-            , p [] [ text <| "Data fetch failed." ]
-            , p [] [ text model.errorMessage ]
-            ]
+                DownloadFailed ->
+                    [ successfulParseView model.catName
+                    , p [] [ text <| "Data fetch failed." ]
+                    , p [] [ text model.errorMessage ]
+                    ]
 
-        DownloadSucceeded ->
-            [ p [] [ text <| "Parse succeeded." ]
-            , catView model
-            , p [] [ text <| "Data fetch succeeded." ]
-            , p [] [ img [ src model.imageUrl, height 300 ] [] ]
-            ]
+                DownloadSucceeded ->
+                    [ successfulParseView model.catName
+                    , p [] [ text <| "Data fetch succeeded." ]
+                    , catPicView model
+                    ]
 
-        Waiting ->
-            [ text "" ]
+                Waiting ->
+                    [ text "" ]
+    in
+    div [] <| [ h2 [] [ text "Results" ] ] ++ resultRows
 
 
-catView : Model -> Html Msg
-catView model =
-    p [] [ text <| "Cat name: " ++ model.catName ]
+successfulParseView : String -> Html Msg
+successfulParseView name =
+    p [] [ text <| "Parse succeeded: Cat name: " ++ name ]
+
+
+catPicView : Model -> Html Msg
+catPicView model =
+    img [ src model.imageUrl, height 300 ] []
