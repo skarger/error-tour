@@ -8,17 +8,8 @@ import Http
 import Json.Decode as JD
 
 
-main =
-    Browser.element
-        { init = init
-        , update = update
-        , subscriptions = subscriptions
-        , view = view
-        }
-
-
 type alias Model =
-    { input : String
+    { userInput : String
     , status : Status
     , errorMessage : String
     , catName : String
@@ -35,50 +26,53 @@ type Status
 
 
 type Msg
-    = EnterJSON String
+    = EnterText String
     | ParseJSON
     | FetchData (Result Http.Error String)
+
+
+main =
+    Browser.element
+        { init = init
+        , update = update
+        , view = view
+        , subscriptions = \_ -> Sub.none
+        }
+
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( { userInput = ""
+      , status = Waiting
+      , errorMessage = ""
+      , catName = "(not set)"
+      , imageUrl = ""
+      }
+    , Cmd.none
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        EnterJSON str ->
-            ( { model | status = model.status, input = str }, Cmd.none )
+        EnterText text ->
+            ( { model | userInput = text }, Cmd.none )
 
         ParseJSON ->
-            let
-                parseResult =
-                    JD.decodeString (JD.field "name" JD.string) model.input
-            in
-            case parseResult of
+            case model.userInput |> JD.decodeString (JD.field "name" JD.string) of
                 Ok name ->
-                    ( { model | catName = name, status = ParseSucceeded }, fetchData name )
+                    ( { model | status = ParseSucceeded, catName = name }, fetchData name )
 
                 Err e ->
-                    ( { model | catName = notSet, status = ParseFailed, errorMessage = JD.errorToString e }, Cmd.none )
+                    ( { model | status = ParseFailed, catName = "(not set)", errorMessage = JD.errorToString e }, Cmd.none )
 
         FetchData httpResult ->
             case httpResult of
                 Ok imageUrl ->
-                    ( { model | imageUrl = imageUrl, status = DownloadSucceeded }, Cmd.none )
+                    ( { model | status = DownloadSucceeded, imageUrl = imageUrl }, Cmd.none )
 
                 Err e ->
-                    case e of
-                        Http.BadUrl string ->
-                            ( { model | errorMessage = "Bad URL: " ++ string, status = DownloadFailed }, Cmd.none )
-
-                        Http.Timeout ->
-                            ( { model | errorMessage = "HTTP timeout", status = DownloadFailed }, Cmd.none )
-
-                        Http.NetworkError ->
-                            ( { model | errorMessage = "HTTP network error", status = DownloadFailed }, Cmd.none )
-
-                        Http.BadStatus int ->
-                            ( { model | errorMessage = "HTTP response status: " ++ String.fromInt int, status = DownloadFailed }, Cmd.none )
-
-                        Http.BadBody string ->
-                            ( { model | errorMessage = "Unexpected response body: " ++ string, status = DownloadFailed }, Cmd.none )
+                    ( handleHttpError model e, Cmd.none )
 
 
 fetchData : String -> Cmd Msg
@@ -89,8 +83,23 @@ fetchData name =
         }
 
 
-notSet =
-    "(not set)"
+handleHttpError : Model -> Http.Error -> Model
+handleHttpError model error =
+    case error of
+        Http.BadUrl string ->
+            { model | status = DownloadFailed, errorMessage = "Bad URL: " ++ string }
+
+        Http.Timeout ->
+            { model | status = DownloadFailed, errorMessage = "HTTP timeout" }
+
+        Http.NetworkError ->
+            { model | status = DownloadFailed, errorMessage = "HTTP network error" }
+
+        Http.BadStatus int ->
+            { model | status = DownloadFailed, errorMessage = "HTTP response status: " ++ String.fromInt int }
+
+        Http.BadBody string ->
+            { model | status = DownloadFailed, errorMessage = "Unexpected response body: " ++ string }
 
 
 view : Model -> Html Msg
@@ -104,12 +113,12 @@ view model =
 inputView : Model -> List (Html Msg)
 inputView model =
     [ h2 [] [ text "Kitty Cat Parser" ]
-    , textarea [ rows 20, cols 40, placeholder "JSON format: { \"name\": \"<cat name>\" }", onInput EnterJSON ] []
+    , textarea [ rows 20, cols 40, placeholder "JSON format: { \"name\": \"<cat name>\" }", onInput EnterText ] []
     , div []
         [ span [] [ text "Input:" ]
-        , pre [] [ text model.input ]
+        , pre [] [ text model.userInput ]
         ]
-    , button [ onClick ParseJSON ] [ text "Parse JSON" ]
+    , button [ onClick ParseJSON ] [ text "Parse and fetch" ]
     ]
 
 
@@ -148,15 +157,3 @@ resultView model =
 catView : Model -> Html Msg
 catView model =
     p [] [ text <| "Cat name: " ++ model.catName ]
-
-
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( { input = "", status = Waiting, errorMessage = "", catName = notSet, imageUrl = "" }
-    , Cmd.none
-    )
-
-
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none
