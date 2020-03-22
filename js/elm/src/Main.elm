@@ -28,8 +28,10 @@ type alias Model =
 
 type Status
     = Waiting
-    | Failure
-    | Success
+    | ParseSucceeded
+    | ParseFailed
+    | DownloadSucceeded
+    | DownloadFailed
 
 
 type Msg
@@ -51,32 +53,32 @@ update msg model =
             in
             case parseResult of
                 Ok name ->
-                    ( { model | catName = name, status = Success }, fetchData name )
+                    ( { model | catName = name, status = ParseSucceeded }, fetchData name )
 
                 Err e ->
-                    ( { model | catName = notSet, status = Failure, errorMessage = JD.errorToString e }, Cmd.none )
+                    ( { model | catName = notSet, status = ParseFailed, errorMessage = JD.errorToString e }, Cmd.none )
 
         FetchData httpResult ->
             case httpResult of
                 Ok imageUrl ->
-                    ( { model | imageUrl = imageUrl, status = Success }, Cmd.none )
+                    ( { model | imageUrl = imageUrl, status = DownloadSucceeded }, Cmd.none )
 
                 Err e ->
                     case e of
                         Http.BadUrl string ->
-                            ( { model | errorMessage = "Bad URL: " ++ string, status = Failure }, Cmd.none )
+                            ( { model | errorMessage = "Bad URL: " ++ string, status = DownloadFailed }, Cmd.none )
 
                         Http.Timeout ->
-                            ( { model | errorMessage = "HTTP timeout", status = Failure }, Cmd.none )
+                            ( { model | errorMessage = "HTTP timeout", status = DownloadFailed }, Cmd.none )
 
                         Http.NetworkError ->
-                            ( { model | errorMessage = "HTTP network error", status = Failure }, Cmd.none )
+                            ( { model | errorMessage = "HTTP network error", status = DownloadFailed }, Cmd.none )
 
                         Http.BadStatus int ->
-                            ( { model | errorMessage = "HTTP response status: " ++ String.fromInt int, status = Failure }, Cmd.none )
+                            ( { model | errorMessage = "HTTP response status: " ++ String.fromInt int, status = DownloadFailed }, Cmd.none )
 
                         Http.BadBody string ->
-                            ( { model | errorMessage = "Unexpected response body: " ++ string, status = Failure }, Cmd.none )
+                            ( { model | errorMessage = "Unexpected response body: " ++ string, status = DownloadFailed }, Cmd.none )
 
 
 fetchData : String -> Cmd Msg
@@ -95,7 +97,6 @@ view : Model -> Html Msg
 view model =
     div [ style "margin" "16px" ]
         [ div [] <| inputView model
-        , div [] <| catView model
         , div [] <| resultView model
         ]
 
@@ -115,14 +116,28 @@ inputView model =
 resultView : Model -> List (Html Msg)
 resultView model =
     case model.status of
-        Failure ->
+        ParseFailed ->
             [ p [] [ text <| "Could not parse given input." ]
             , p [] [ text model.errorMessage ]
             , p [] [ text "Expected format: { \"name\": \"<cat name>\" }" ]
             ]
 
-        Success ->
+        ParseSucceeded ->
             [ p [] [ text <| "Parse succeeded." ]
+            , catView model
+            ]
+
+        DownloadFailed ->
+            [ p [] [ text <| "Parse succeeded." ]
+            , catView model
+            , p [] [ text <| "Data fetch failed." ]
+            , p [] [ text model.errorMessage ]
+            ]
+
+        DownloadSucceeded ->
+            [ p [] [ text <| "Parse succeeded." ]
+            , catView model
+            , p [] [ text <| "Data fetch succeeded." ]
             , p [] [ img [ src model.imageUrl, height 300 ] [] ]
             ]
 
@@ -130,9 +145,9 @@ resultView model =
             [ text "" ]
 
 
-catView : Model -> List (Html Msg)
+catView : Model -> Html Msg
 catView model =
-    [ p [] [ text <| "Cat name: " ++ model.catName ] ]
+    p [] [ text <| "Cat name: " ++ model.catName ]
 
 
 init : () -> ( Model, Cmd Msg )
