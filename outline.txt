@@ -106,3 +106,8 @@ JS exceptions: details
 Problems with exceptions
 
 Modern alternatives: Result Type
+
+Go 2009
+Rust 2010
+Elm 2012
+TypeScript 2012
