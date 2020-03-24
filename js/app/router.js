@@ -7,7 +7,6 @@ export default class Router extends EmberRouter {
 }
 
 Router.map(function() {
-  this.route('result-type');
   this.route('sound-principles');
   this.route('prevention');
   this.route('route-level');
