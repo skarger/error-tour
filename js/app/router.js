@@ -16,4 +16,5 @@ Router.map(function() {
   this.route('exceptions');
   this.route('return-value');
   this.route('errno');
+  this.route('errors-as-data');
 });
