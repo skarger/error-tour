@@ -16,6 +16,21 @@ parseAndReport given =
     </div>
 
     <div>
+        <h1>Elm Again</h1>
+        <pre>
+            <code>
+parseAndReport : String -> String
+parseAndReport given =
+    let
+        number =
+            String.toInt given |> Maybe.withDefault 0
+    in
+    "Parsed " ++ String.fromInt number ++ "."
+            </code>
+        </pre>
+    </div>
+
+    <div>
         <h1>Go</h1>
         <pre>
             <code>
@@ -50,6 +65,31 @@ func main() {
     </div>
 
     <div>
+        <h1>Go Again</h1>
+        <pre>
+            <code>
+package main
+
+import "strconv"
+import "fmt"
+
+func main() {
+    var i int64
+
+    i, _ = strconv.ParseInt("1000", 0, 64)
+    fmt.Printf("Parsed %d.\n", i)
+
+    i, _ = strconv.ParseInt("A grand", 0, 64)
+    fmt.Printf("Parsed %d.\n", i)
+
+
+    fmt.Println("Have a nice day.")
+}
+          </code>
+        </pre>
+    </div>
+
+    <div>
         <h2>Output</h2>
         <pre>
 -- parseAndReport "1000"
@@ -63,8 +103,28 @@ Error: Could not parse "A grand".
     <div>
         <h2>Output</h2>
         <pre>
+-- parseAndReport "1000"
+Parsed 1000.
+
+-- parseAndReport "A grand"
+Parsed 0.
+        </pre>
+    </div>
+
+    <div>
+        <h2>Output</h2>
+        <pre>
 Parsed 1000.
 Error: strconv.ParseInt: parsing "A grand": invalid syntax.
+Have a nice day.
+        </pre>
+    </div>
+
+    <div>
+        <h2>Output</h2>
+        <pre>
+Parsed 1000.
+Parsed 0.
 Have a nice day.
         </pre>
     </div>

@@ -111,3 +111,7 @@ Go 2009
 Rust 2010
 Elm 2012
 TypeScript 2012
+
+
+Can you make a sane default?
+Can you treat an error as data?
