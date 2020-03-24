@@ -26,7 +26,7 @@ public class JavaExample {
 begin
   puts "Parsed #{Integer('1000')}."
 
-  # 'A grand'.to_i would return nil
+  # 'A grand'.to_i would return 0
   puts "Parsed #{Integer('A grand')}."
 rescue ArgumentError => e
   puts "Error: #{e}."
