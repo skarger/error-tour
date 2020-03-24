@@ -115,3 +115,35 @@ TypeScript 2012
 
 Can you make a sane default?
 Can you treat an error as data?
+
+
+panic as andon cord
+
+Andon (Japanese: アンドン or あんどん or 行灯) is a manufacturing term referring to a system to notify management, maintenance, and other workers of a quality or process problem.
+The alert can be activated manually by a worker using a pullcord or button or may be activated automatically by the production equipment itself.
+The system may include a means to stop production so the issue can be corrected.
+
+An Andon System is one of the principal elements of the Jidoka quality control method pioneered by Toyota as part of the Toyota Production System and therefore now part of the lean production approach.
+It gives the worker the ability, and moreover the empowerment, to stop production when a defect is found, and immediately call for assistance.
+Common reasons for manual activation of the Andon are part shortage, defect created or found, tool malfunction, or the existence of a safety problem.
+Work is stopped until a solution has been found.
+
+
+Autonomation describes a feature of machine design to effect the principle of jidoka (自働化) used in the Toyota Production System (TPS) and Lean manufacturing.
+It may be described as "intelligent automation" or "Automation with a human touch".
+
+At Toyota, this usually means that if an abnormal situation arises; the machine stops and the worker will stop the production line.
+
+It is a quality control process that applies the following four principles:
+
+    Detect the abnormality.
+    Stop.
+    Fix or correct the immediate condition.
+    Investigate the root cause and install a countermeasure.
+
+Autonomation aims to prevent the production of defective products, eliminate overproduction and focus attention on understanding the problems and ensuring that they do not reoccur.
+
+Vs. exceptions is like piling up a bottleneck of different phases of an assembly line.
+
+In 1913 Henry Ford introduced the assembly line to help reduce the cost of the already popular Model T.
+Instead of working on a variety of tasks to build one car, each worker remained in the same spot and performed one task for his entire shift.
