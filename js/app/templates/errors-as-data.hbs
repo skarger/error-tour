@@ -31,6 +31,43 @@ parseAndReport given =
     </div>
 
     <div>
+        <h1>Rust</h1>
+        <pre>
+            <code>
+fn main() {
+    match "1000".parse::&lt;u32&gt;() {
+      Ok(number) => println!("Parsed {}.", number),
+      Err(e) => println!("Error: {}", e),
+    }
+
+    match "A grand".parse::&lt;u32&gt;() {
+      Ok(number) => println!("Parsed {}.", number),
+      Err(e) => println!("Error: {}", e),
+    }
+
+    println!("Have a nice day.");
+}
+            </code>
+        </pre>
+    </div>
+
+    <div>
+        <h1>Rust Again</h1>
+        <pre>
+            <code>
+fn main() {
+    println!("Parsed {}.", "1000".parse::&lt;u32&gt;().unwrap());
+
+    println!("Pushing my luck:");
+    println!("Parsed: {}", "A grand".parse::&lt;u32&gt;().unwrap());
+
+    println!("Have a nice day.");
+}
+            </code>
+        </pre>
+    </div>
+
+    <div>
         <h1>Go</h1>
         <pre>
             <code>
@@ -108,6 +145,25 @@ Parsed 1000.
 
 -- parseAndReport "A grand"
 Parsed 0.
+        </pre>
+    </div>
+
+    <div>
+        <h2>Output</h2>
+        <pre>
+Parsed 1000.
+Error: invalid digit found in string
+Have a nice day.
+        </pre>
+    </div>
+
+    <div>
+        <h2>Output</h2>
+        <pre>
+Parsed 1000.
+Pushing my luck:
+thread 'main' panicked at 'called `Result::unwrap()` on an `Err` value: ParseIntError { kind: InvalidDigit }', src/libcore/result.rs:1165:5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
         </pre>
     </div>
 
