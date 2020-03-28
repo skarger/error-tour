@@ -16,4 +16,6 @@ Router.map(function() {
   this.route('return-value');
   this.route('errno');
   this.route('errors-as-data');
+  this.route('elm-parse-int');
+  this.route('rust-parse-int');
 });

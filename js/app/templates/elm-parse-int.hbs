@@ -1,0 +1,55 @@
+<div local-class="grid">
+    <div>
+        <h1>Elm</h1>
+        <pre>
+            <code>
+parseAndReport : String -> String
+parseAndReport given =
+  case String.toInt given of
+    Just number ->
+      "Parsed " ++ String.fromInt number ++ "."
+
+    Nothing ->
+      "Error: Could not parse \"" ++ given ++ "\"."
+            </code>
+        </pre>
+    </div>
+
+    <div>
+        <h1>Elm Again</h1>
+        <pre>
+            <code>
+parseAndReport : String -> String
+parseAndReport given =
+    let
+        number =
+            String.toInt given |> Maybe.withDefault 0
+    in
+    "Parsed " ++ String.fromInt number ++ "."
+            </code>
+        </pre>
+    </div>
+
+
+    <div>
+        <h2>Output</h2>
+        <pre>
+-- parseAndReport "1000"
+Parsed 1000.
+
+-- parseAndReport "A grand"
+Error: Could not parse "A grand".
+        </pre>
+    </div>
+
+    <div>
+        <h2>Output</h2>
+        <pre>
+-- parseAndReport "1000"
+Parsed 1000.
+
+-- parseAndReport "A grand"
+Parsed 0.
+        </pre>
+    </div>
+</div>
