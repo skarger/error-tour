@@ -1,16 +1,16 @@
 Intro
-  Why?
-    Needed to handle fetch errors.
-    Blackboard story.
-        Is a timeout a bug?
-        Who's fault?
-
   What is quality?
     Handling errors
     Performance
     UI
 
   What are errors?
+
+  Why?
+    Blackboard story.
+        Essentials of calculus
+        Is a timeout a bug?
+        Who's fault?
 
   Computer programs have inputs, outputs, side effects, and internal logic.
 
