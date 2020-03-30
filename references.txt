@@ -218,6 +218,63 @@ rescue ZeroDivisionError
 end
 ```
 
+@l = lambda do
+  raise "from l"
+rescue => e
+  puts "l: rescued: #{e}"
+end
+
+@p = proc do
+  raise "from p"
+rescue => e
+  puts "p: rescued: #{e}"
+end
+
+def a_block
+  [1, 2].each do |n|
+    if n.odd?
+      puts "b: #{n}"
+    else
+      raise "b: #{n}"
+    end
+  rescue => e
+    puts "b: rescued: #{e}"
+  end
+end
+
+def outer_method
+  puts "starting outer method"
+
+  relevant_helper_method
+
+  puts "leaving outer method"
+end
+
+def relevant_helper_method
+  puts "starting helper method"
+
+  our_generic_raise("an error in helper method")
+
+  puts "leaving helper method"
+end
+
+class OurError < RuntimeError
+  attr_accessor :code
+end
+
+def our_generic_raise(message)
+  the_err = OurError.new
+  the_err.code = 123
+  raise the_err, message, caller
+end
+
+begin
+  outer_method
+rescue OurError => e
+  puts "Rescued: #{e}. code: #{e.code}"
+end
+
+
 
 Rescuing Exceptions is not idiomatic
 
