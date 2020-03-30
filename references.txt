@@ -34,7 +34,7 @@ while the JESP tool [Ryder et al. 2000] found that 16% of methods contain some k
 Later work [Sinha et al. 2004] found patterns associated with complex implicit control flow in all of the subject programs it studied.
 
 
- Exception handlers are typicallylexically scoped and may be quite labyrinthine.
+ Exception handlers are typically lexically scoped and may be quite labyrinthine.
 
 https://web.archive.org/web/20150923211739/http://www.cs.virginia.edu/~weimer/p/weimer-toplas2008.pdf
 
@@ -154,6 +154,11 @@ An Exception object carries information about an exception:
     An optional descriptive message.
     Optional backtrace information.
 
+Define exception on an arbitrary object to use it as an exception.
+
+retry keyword
+
+benign value
 
 With no arguments, raises the exception in $! or raises a RuntimeError if $! is nil.
 ```

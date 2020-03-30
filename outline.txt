@@ -12,23 +12,21 @@ Intro
         Is a timeout a bug?
         Who's fault?
 
-  Computer programs have inputs, outputs, side effects, and internal logic.
-
     Inputs:
         stdin
-        OS signals (SIGHUP, SIGTERM)
-        inbound network requests
-        DB query results
+        OS signals (SIGINT, SIGSEGV, SIGHUP, etc.)
+        Incoming network requests
+        Network responses, includng DB query results
 
     Outputs / Side effects:
-        stdout, stderr
-        graphical rendering
-        writing data to DB, network socket, file system
+        Writing stdout, stderr
+        Graphical rendering, HTML DOM updates
+        Writing data to DB, network socket, or file system
 
-    Internal logic:
+    Internal computation:
         Data transformation
-        Calculation
-        Business rules
+        Numeric calculation, evaluating formulas, executing algorithms
+        Executing and enforcing business logic
 
 
   Errors often happen on all.
