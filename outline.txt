@@ -96,9 +96,6 @@ Ruby exceptions: details
         https://github.com/salsify/delayed-job-extensions/blob/master/lib/delayed/extensions/worker_exception_handling.rb
         https://github.com/salsify/delayed-job-extensions/blob/master/lib/delayed/extensions/exception_reporter_plugin.rb
 
-
-
-
 JS exceptions: details
 
 Problems with exceptions
@@ -113,6 +110,12 @@ TypeScript 2012
 
 Can you make a sane default?
 Can you treat an error as data?
+
+
+
+
+
+Exceptions Redux: patterns given what we have
 
 
 panic as andon cord

@@ -1,4 +1,7 @@
 Error values in Go aren't special, they are just values like any other, and so you have the entire language at your disposal.
+
+Values can be programmed, and since errors are values, errors can be programmed.
+
 - Rob Pike, co-designer of Go
 
 There can be only one exception at any moment in flight. They require immediate an exclusive attention. The exception comes to the fore, you must handle it right now.
@@ -145,6 +148,104 @@ https://github.com/salsify/adrs/blob/master/common/2019-03-22-graphql-errors.md
 https://github.com/rails/rails/blob/master/actionpack/lib/action_dispatch/middleware/show_exceptions.rb
 
 
+5 Questions about when to raise (Avdi Grimm, Exceptional Ruby)
+1. Is the situation truly unexpected?
+    Use exceptions only for exceptional situations.
+    Failing to open a file.
+    Invalid user input.
+    404 response from an API.
+    ActiveRecord#save vs. save!
+
+   Use throw for expected cases
+
+  catch/throw are not the same as raise/rescue. catch/throw allows you to quickly exit blocks back to a point where a catch is defined for a specific symbol, raise rescue is the real exception handling stuff involving the Exception object.
+  throwing "out" of a chain of logic can be a way of avoiding expensive logic, as well as avoiding downstream type errors.
+
+  https://ruby-doc.org/core-2.7.0/Kernel.html#method-i-catch
+    catch([tag]) {|tag| block } → obj
+    catch executes its block. If throw is not called, the block executes normally, and catch returns the value of the last expression evaluated.
+    If throw(tag2, val) is called, Ruby searches up its stack for a catch block whose tag has the same object_id as tag2. When found, the block stops executing and returns val (or nil if no second argument was given to throw).
+
+    def index
+      res = catch :lay do
+        BrandSpace::Layout.strip_organization_scope.active.count
+      rescue UncaughtThrowError => e
+        render plain: e.backtrace
+        return
+      end
+
+      render json: { count: res }
+    end
+
+    module BrandSpace
+      class Layout
+        scope :active, -> do
+          throw(:lay) if Rails.env.development?
+          where(destroyed_at: nil)
+        end
+      end
+    end
+
+2. Am I prepared to end the program?
+    Any unrescued exception will end the program (or in Rails, end the web request, in DJ, schedule the job for retry).
+
+    Instead of doing that, we might use a benign value.
+
+3. Can I punt the decision to someone else?
+    In most cases, the caller should determine how to handle an error, not the callee. Raising an exception in the callee forces the issue.
+    (This is why RestClient raising for 400 / 500 level statuses is bad.)
+
+4. Am I throwing away valuable diagnostics?
+    Long-running operation does a bunch of computation, right at the end it raises an exception, now we've lost everything that had been computed thus far.
+    We can set an errors field instead, pass the result as data.
+    Sagas pattern.
+
+5. Would continuing result in a less informative exception?
+    Try to generate some data, it fails and results in nil. Might be better to raise an exception with an informative message there, rather than passing the result forward and getting "NoMethodError: undefined method `some_downstream_method' for nil:NilClass"
+
+
+    As exception represents an immediate, nonlocal transfer of control - it's kind of cascading goto.
+    Programs that use exceptions as part of their normal processing suffer from
+    all the readability and maintainability problems of classic spaghetti code.
+     - The Pragmatic Programmer
+
+    Isolate exception *handling* to the program borders. Limit exception raising to exceptional situations.
+    Do not litter code with ad hoc begin; rescue; end
+
+
+module MyLib
+  module Error
+  end
+end
+
+rescue Exception => e
+ e.extend(MyLib::Error)
+ raise e
+end
+
+This puts Module#=== on e
+MyLib::Error === e # true
+
+# client code
+begin
+  MyLib.call
+rescue MyLib::Error => my_lib_error
+  # whatever makes sense for caller
+end
+
+
+Structure exceptions by how you want to handle or present them.
+
+UserError
+
+LogicError
+    InternalError
+    ClientError (for libs)
+
+TransientError
+    TimeoutError
+
+
 https://ruby-doc.org/core-2.7.0/Exception.html
 
 Class Exception and its subclasses are used to communicate between Kernel#raise and rescue statements in begin ... end blocks.
@@ -283,3 +384,22 @@ We don’t want to rescue Exceptions, however. Exceptions that aren’t Standard
 Exceptions that are StandardErrors are what a normal Ruby program are supposed to use.
 
 https://thoughtbot.com/blog/rescue-standarderror-not-exception
+
+
+"Old code has been used. It has been tested. Lots of bugs have been found, and they’ve been fixed."
+https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i/
+
+Back to that two page function. Yes, I know, it’s just a simple function to display a window, but it has grown little hairs and stuff on it and nobody knows why.
+
+Well, I’ll tell you why: those are bug fixes.
+One of them fixes that bug that Nancy had when she tried to install the thing on a computer that didn’t have Internet Explorer.
+Another one fixes that bug that occurs in low memory conditions.
+Another one fixes that bug that occurred when the file is on a floppy disk and the user yanks out the disk in the middle.
+That LoadLibrary call is ugly but it makes the code work on old versions of Windows 95.
+
+Each of these bugs took weeks of real-world usage before they were found.
+The programmer might have spent a couple of days reproducing the bug in the lab and fixing it.
+If it’s like a lot of bugs, the fix might be one line of code, or it might even be a couple of characters,
+but a lot of work and time went into those two characters.
+
+When you throw away code and start from scratch, you are throwing away all that knowledge. All those collected bug fixes. Years of programming work.
