@@ -69,6 +69,14 @@ If you care about building robust systems, the error checking code is the main c
 https://danluu.com/postmortem-lessons/
 
 
+
+Giventhatmanyofthesesystemsweredesignedtobehighlyavailable,generallydevelopedusinggoodsoft-wareengineeringpractices,andintenselytested,this
+raisesthequestionsofwhythesesystemsstillexperi-encefailuresandwhatcanbedonetoincreasetheirre-siliency.
+
+ohelpanswerthesequestions,westudied198randomlysampled,user-reportedfailuresoffivedata-intensivedistributedsystemsthatweredesignedtotol-eratecomponentfailuresandarewidelyusedinproduc-tionenvironments
+
+ThespecificsystemsweconsideredwereCassandra,HBase,HadoopDistributedFileSystem(HDFS),HadoopMapReduce,andRedis.
+
 We found the majority of catastrophic failures could easily have been prevented by performing simple testing on error handling code – the last line of defense – even without an understanding of the software design.
 
 https://www.usenix.org/system/files/conference/osdi14/osdi14-paper-yuan.pdf
