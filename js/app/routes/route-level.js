@@ -1,6 +1,6 @@
 import Route from '@ember/routing/route';
 
-export default class RouteLevelRoute extends Route {
+export default class SomeRoute extends Route {
   model() {
     throw new Error("bad");
   }

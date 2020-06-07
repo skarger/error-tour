@@ -1,150 +1,80 @@
-Intro
-  What is quality?
-    Handling errors
-    Performance
-    UI
+Inspiration
 
-  What are errors?
+What is quality?
 
-  Why?
-    Blackboard story.
-        Essentials of calculus
-        Is a timeout a bug?
-        Who's fault?
+Blackboard story
 
-    Inputs:
-        stdin
-        OS signals (SIGINT, SIGSEGV, SIGHUP, etc.)
-        Incoming network requests
-        Network responses, includng DB query results
+Defining an errors is ambiguous
 
-    Outputs / Side effects:
-        Writing stdout, stderr
-        Graphical rendering, HTML DOM updates
-        Writing data to DB, network socket, or file system
+Understanding errors depends on real-world usage
 
-    Internal computation:
-        Data transformation
-        Numeric calculation, evaluating formulas, executing algorithms
-        Executing and enforcing business logic
+Errors are common in software
 
+First, we don't want errors to happen in the first place, and we have several techniques to that end.
 
-  Errors often happen on all.
-    Unexpected inputs
-    Problems with side effects - DB queries, DB writes, HTTP requests
-    Internal logic with unexpected data flow (e.g. null)
-    Exceptional environmental conditions: out of memory, disk failure, incorrect configuration
+But runtime errors do happen. When they do, our first goal is to convert them into non-errors.
 
-    Question: are all these errors basically the same kind of thing?
-        Hint: No.
+Correctness and Robustness
+    Examples
 
-What do we want as far as errors?
+Robustness is preferable, but it doesn't always work. Sometimes our programs encounter conditions where they just can't fulfill their intended goal. What then?
 
-    1. Errors don't happen!
-        In other words, we want that the software works gracefully with a wide range of real-world circumstances.
+Remainder of this talk is about dealing with these kinds error situations, where there is no correct way to continue the program.
 
-    2. When errors do happen, we
-        * Provide information to users.
-        * Notify engineers/managers/PM/CS that something went wrong.
-        * Are able to rectify any ongoing problems.
+In the days of C, error handling conventionally happened via return values.
 
-Is this the status quo? Have we accomplished this already?
-    Sort of. We do a decent job with errors, but it's not rock solid. Un-inflated grade: B-
+While this worked, it was easy to forget to check return values.
 
-    So why is that? What brought us to this point, and what would we need to change to do better?
+Several languages emerged in the 80s and 90s that all included mechanisms for Exceptions.
 
-History
-    C style error handling. No exceptions. Return value, errno.
+General form of Exceptions are: Try running some code, if it fails, jump to this other code to deal with the error.
 
-    Aside from error handling, C has a variety of other limitations, and people were motivated to create programming languages that improved upon it.
+Exceptions introduce implicit control flow, like GOTO.
 
-    C: 1972
+Catastrophic failures often happen due to incorrect exception handling.
 
-    C++: 1985
+More recent languages have gone back to communicating errors with return values, but with some twists.
 
-    Python: 1990
+Go and Rust both returned to the errors-as-data style.
 
-    Ruby: 1995
-    Java: 1995
-    JavaScript: 1995
-    PHP: 1995 * included try/catch, but originally not exceptions.
+Railway Oriented Programming provides a style for passing errors-as-data from function to function.
 
-    C#: 2000
+There are various factors to consider with errors-as-data vs. exceptions.
 
-    Surely these weren't the only languages created in that era, but they've had a lot of influence
-    on modern web and enterprise development,
-    and one major difference from C they share is the notion of exceptions.
+Most importantly, representing errors-as-data makes sense for errors that are part of the program's domain.
 
-Exceptions
-    See examples. A lot of research about exceptions analyzes Java, so it's shown here, but as we can see Ruby and JS are similar.
+Another tradeoff to consider with errors-as-data is loose coupling.
 
-    General idea: run some code. If something goes wrong, stop execution, go run some other code.
-    This happens without the programmer checking whether something went wrong.
-    This construction also has the finally/ensure block to run some "resolution" code in all cases.
+Finally the practical consideration of are you working in a platform that has exceptions?
+    Clojure -> data-oriented, functional, but interop with Java.
+    Typescript -> type-checker supports static enforcement of Result types, but interop with JavaScript.
 
-Ruby exceptions: details
-    RuntimeError
-    Do not rescue Exception
-    Errno (RestClient example)
-    Rails
-    salsify_grape
-        https://github.com/salsify/salsify_grape/blob/master/lib/salsify_grape/base_api.rb#L41
-    salsify_graphql-server
-        https://github.com/salsify/salsify_graphql-server/blob/master/lib/salsify_graphql/server/base_controller.rb
-    DelayedJob
-        https://github.com/collectiveidea/delayed_job#hooks
-        https://github.com/salsify/delayed-job-extensions/blob/master/lib/delayed/extensions/worker_exception_handling.rb
-        https://github.com/salsify/delayed-job-extensions/blob/master/lib/delayed/extensions/exception_reporter_plugin.rb
+We have infrastructure for tracking exceptions (bugsnag).
 
-JS exceptions: details
+Conversely, there are several criteria for when to use Exceptions.
 
-Problems with exceptions
+Bugs (programming errors), exceptional cases that are outside the program domain.
 
-Modern alternatives: Result Type
+HTTP requests are a subtle example of this. In some cases they are recoverable, but we will often want them to become exceptions.
 
-Go 2009
-Rust 2010
-Elm 2012
-TypeScript 2012
+JS Error objects have a name and a message, and a catch block can identify error type using the instanceof operator.
 
+When a JS runtime error happens but it's not handled by any catch block, the browser will fire the window.onerror event. This can be configured to run a function as a last resort error handler.
 
-Can you make a sane default?
-Can you treat an error as data?
+try-catch works for async-await.
+
+A try-catch block will not catch rejected promises. A promise must chain a catch call to handle the promise rejection.
+
+When a promise rejects but there's no catch chained onto it, the browser will fire the unhandledrejection event. Like window.onerror, this can be configured as a last resort handler for rejected promises.
+
+The basic way to configure Bugsnag is to set up handlers for window.onerror and unhandledrejection events that notify bugsnag of the error.
+
+Ember.onerror abstracts over both of these.
+
+Salsify's error-reporting library abstracts over Ember.onerror.
+
+Ember routes can display an error template if an error occurs while loading the route's data.
 
 
 
 
-
-Exceptions Redux: patterns given what we have
-
-
-panic as andon cord
-
-Andon (Japanese: アンドン or あんどん or 行灯) is a manufacturing term referring to a system to notify management, maintenance, and other workers of a quality or process problem.
-The alert can be activated manually by a worker using a pullcord or button or may be activated automatically by the production equipment itself.
-The system may include a means to stop production so the issue can be corrected.
-
-An Andon System is one of the principal elements of the Jidoka quality control method pioneered by Toyota as part of the Toyota Production System and therefore now part of the lean production approach.
-It gives the worker the ability, and moreover the empowerment, to stop production when a defect is found, and immediately call for assistance.
-Common reasons for manual activation of the Andon are part shortage, defect created or found, tool malfunction, or the existence of a safety problem.
-Work is stopped until a solution has been found.
-
-
-Autonomation describes a feature of machine design to effect the principle of jidoka (自働化) used in the Toyota Production System (TPS) and Lean manufacturing.
-It may be described as "intelligent automation" or "Automation with a human touch".
-
-At Toyota, this usually means that if an abnormal situation arises; the machine stops and the worker will stop the production line.
-
-It is a quality control process that applies the following four principles:
-
-    Detect the abnormality.
-    Stop.
-    Fix or correct the immediate condition.
-    Investigate the root cause and install a countermeasure.
-
-Autonomation aims to prevent the production of defective products, eliminate overproduction and focus attention on understanding the problems and ensuring that they do not reoccur.
-
-Vs. exceptions is like piling up a bottleneck of different phases of an assembly line.
-
-In 1913 Henry Ford introduced the assembly line to help reduce the cost of the already popular Model T.
-Instead of working on a variety of tasks to build one car, each worker remained in the same spot and performed one task for his entire shift.
