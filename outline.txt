@@ -1,6 +1,39 @@
-Inspiration
+Hello, I'm Stephen Karger, thanks for attending today.
 
-What is quality?
+I've wanted to to give this talk for awhile. The catalyst for it came all the way back at our company kickoff event in January.
+
+People who were there will remember that in the morning we had the session for engineering and product,
+and during Adam's presentation, one of his takeaway messages was that we should make sure to keep focus on quality during this coming year.
+And he's been consistent about that, he said something similar at the 2019 kickoff event.
+
+So at the time I was contemplating that a little, but simultaneously at work I was in flight on a project
+and I was deciding how to approach a particular issue, and that issue is the topic of this talk, and I'll get to that in a minute.
+
+First though I want to dig into quality. Really what is quality in software?
+For this talk I've come up with a definition that I like. I'll say that software quality consists of three traits:
+
+* One trait is if the software provides an ergonomic user interface.
+    Does it look good, is it intuitive, does it make it easy to do what you need to do?
+* The next trait is performance. If it's responsive and fast then it's higher quality than a slow version.
+* And finally, the last core aspect of quality is does the software handle errors gracefully?
+    Actually I'd say that error handling is a little underrated, it's often an afterthought in the development process,
+    but it's absolutely fundamental to whether using the software is a good experience, whether it feels like quality.
+
+So that's what this talk is all about. I'm going to give you a survey of different approaches to error handling,
+and then I'm going to dive a little bit into what we have specifically with the tools we use at Salsify,
+and I'll offer some recommendations about how to do error handling effectively.
+
+And that's what I was looking at back in January. In my project I had identified that some runtime errors were
+possible, there was no way to avoid that. I had to decide how to handle those errors. So I took that opportunity
+to try to review best practices, and I started Googling, and as you might guess, I immediately found people
+with strong opinions that completely contradicted each other.
+
+So I wanted to explore it more.
+As mundane as it sounds, the truth is that error handling is a hard problem, and we don't have all the answers yet.
+Even in the course of preparing this talk, my own opinions evolved. I'll share that with all of you now.
+
+Right then, so as I started outlining this talk, I was trying to think back about my own experiences as an end-user of software.
+My first experience with a SaaS platform was my freshman year in college.
 
 Blackboard story
 
