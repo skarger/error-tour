@@ -2,7 +2,6 @@ import Application from '@ember/application';
 import Resolver from 'ember-resolver';
 import loadInitializers from 'ember-load-initializers';
 import config from './config/environment';
-import Ember from 'ember';
 
 export default class App extends Application {
   modulePrefix = config.modulePrefix;
@@ -10,9 +9,12 @@ export default class App extends Application {
   Resolver = Resolver;
 }
 
-Ember.onerror = function(error) {
-  console.log(`Ember.onerror: ${error}`);
-  window.location.href = '/top-level-error';
+window.onerror = function(message) {
+  window.location.href = '/top-level-error?type=exception&message=${message}';
 }
+
+window.addEventListener('unhandledrejection', function(event) {
+  window.location.href = '/top-level-error?type=rejection&message=${event.reason}';
+});
 
 loadInitializers(App, config.modulePrefix);
