@@ -1,86 +1,210 @@
-Hello, I'm Stephen Karger, thanks for attending today.
+Hi everyone, I'm Stephen Karger, thank you for attending today.
 
-I've wanted to to give this talk for awhile. The catalyst for it came all the way back at our company kickoff event in January.
+OK, so I'll tell you what this talk is all about in a moment but I want start out with a bigger question.
+When it comes to software, what is quality?
+What does it actually mean for software to be high quality? And if you have built quality software, what did you do?
+What details made it quality?
 
-People who were there will remember that in the morning we had the session for engineering and product,
-and during Adam's presentation, one of his takeaway messages was that we should make sure to keep focus on quality during this coming year.
-And he's been consistent about that, he said something similar at the 2019 kickoff event.
+So I've come up with an answer that I like, which is that quality software has the following traits:
 
-So at the time I was contemplating that a little, but simultaneously at work I was in flight on a project
-and I was deciding how to approach a particular issue, and that issue is the topic of this talk, and I'll get to that in a minute.
-
-First though I want to dig into quality. Really what is quality in software?
-For this talk I've come up with a definition that I like. I'll say that software quality consists of three traits:
-
-* One trait is if the software provides an ergonomic user interface.
+* Correctness. Now granted in the real-world we don't always have a clear single definition of the correct behavior.
+    But still if you add 2 + 2 you want to get 4. Good quality software does the correct thing for well-defined problems.
+* The next trait is if the software provides an ergonomic user interface.
     Does it look good, is it intuitive, does it make it easy to do what you need to do?
-* The next trait is performance. If it's responsive and fast then it's higher quality than a slow version.
+* Another trait is performance. If it's responsive and fast then it's higher quality.
 * And finally, the last core aspect of quality is does the software handle errors gracefully?
-    Actually I'd say that error handling is a little underrated, it's often an afterthought in the development process,
-    but it's absolutely fundamental to whether using the software is a good experience, whether it feels like quality.
+    Errors happen, but then whether the software handles them well makes a huge difference in whether the software feels high quality.
 
-So that's what this talk is all about. I'm going to give you a survey of different approaches to error handling,
-and then I'm going to dive a little bit into what we have specifically with the tools we use at Salsify,
-and I'll offer some recommendations about how to do error handling effectively.
+So that last aspect is what this talk is about. I wanted to talk about error handling because in my experience,
+it tends to be something of an afterthought. We tackle it when we need to, case-by-case.
+It's actually rare to have shared clear understanding of here's how this application deals with errors.
 
-And that's what I was looking at back in January. In my project I had identified that some runtime errors were
-possible, there was no way to avoid that. I had to decide how to handle those errors. So I took that opportunity
-to try to review best practices, and I started Googling, and as you might guess, I immediately found people
-with strong opinions that completely contradicted each other.
+But that's surprising because for one thing the programming languages we use do provide the basic tools, and second we have plenty of evidence
+that our programs are going to encounter errors. It's a known problem to be solved. And it's somewhat low-hanging fruit,
+it's very doable to make a big step towards great quality just by planning out error handling approach a little bit.
 
-So I wanted to explore it more.
-As mundane as it sounds, the truth is that error handling is a hard problem, and we don't have all the answers yet.
-Even in the course of preparing this talk, my own opinions evolved. I'll share that with all of you now.
+So I wanted to dig into this topic, and land on some actionable techniques
+for how to handle errors at the level of an application.
 
-Right then, so as I started outlining this talk, I was trying to think back about my own experiences as an end-user of software.
-My first experience with a SaaS platform was my freshman year in college.
+I'm going tour through different approaches to error handling, and put the tools we have in Ruby and JavaScript
+in context, and talk about tradeoffs.
 
-Blackboard story
+I'm going to touch on Salsify-specific error handling tools we have available already,
+and finally share the overall design recommendations that I've landed on myself.
 
-Defining an errors is ambiguous
+So a couple months ago I tried to go to Jenkins and I saw this page. Stack trace.
+Jenkins is a tool for programmers, and as programmers when we talk about errors it's easy to think about this. An Exception.
 
-Understanding errors depends on real-world usage
+But I want to show you this next example. Here is the Enhanced Content UI in Salsify. I've opened this publish dropdown and it's showing me
+a collection of retailers where I can send my Enhanced Content.
+But in the next slide, this is a real bug that we had. I click the Publish dropdown, and I just see this empty box.
 
-Errors are common in software
+Let me call out that this bug was never reported. I only found it while investigating something I'd
+seen in Bugsnag a few times.
 
-First, we don't want errors to happen in the first place, and we have several techniques to that end.
+If I open the developer tools I can see that the network request returned a 503, and that's why it couldn't populate the list of retailers.
 
-But runtime errors do happen. When they do, our first goal is to convert them into non-errors.
+But imagine the end-user's experience here. They see this empty box.
+It's confusing, it's not truly evident that an error occurred. A user might think they missed some setup or configuration.
 
-Correctness and Robustness
-    Examples
+Another example on this next slide, I've just updated my Enhanced Content layout to reference an Image property.
+But if I open dev tools I can see that when I set that value, the client tried to save the layout, but the API returned a 500 error.
+So even though the UI looks fine, if I reload the page I'd see that my layout has not saved my work.
 
-Robustness is preferable, but it doesn't always work. Sometimes our programs encounter conditions where they just can't fulfill their intended goal. What then?
+What I'm getting at is that for end users the experience of errors is not 1-to-1 with exceptions. Very frequently it's more subtle.
+The software is behaving in a way that seems off, but it's quiet, and it's hard to understand cause and effect, and
+that ultimately leads to lower trust in the software, and a feeling of lower quality.
 
-Remainder of this talk is about dealing with these kinds error situations, where there is no correct way to continue the program.
+According to me then, the first principle behind error design is communication. A good error design needs to answer:
+how do we inform end users,
+how do we inform customer support,
+how do we inform PMs,
+and of course how do we inform ourselves?
 
-In the days of C, error handling conventionally happened via return values.
+Honestly this is the most important message. Devising a communication plan
+for when errors happen is the core step to dealing with errors in a good quality way.
 
-While this worked, it was easy to forget to check return values.
+OK, so when it comes to software errors, what do we want?
 
-Several languages emerged in the 80s and 90s that all included mechanisms for Exceptions.
+Well we don't want them to happen in the first place! Clearly, preventing errors is preferable to dealing with them at runtime.
 
-General form of Exceptions are: Try running some code, if it fails, jump to this other code to deal with the error.
+And we employ several techniques to try to prevent errors. Testing, type checking, and code review are all helpful
+for preventing errors, among other nice outcomes.
 
-Exceptions introduce implicit control flow, like GOTO.
+But we all know our software still has errors in production. And a big part of our jobs as engineers
+is to convert runtime errors into non-errors. A common example is the program is trying to work with a data value
+that it expects to be non-null, but then it's null and the program throws an error. So then we edit the code
+to make that a non-issue, either by adding a condition to check for nulls, or telling the user to supply
+a different value, or converting the null value into a valid default. And this process of widening the range
+of states that the program can handle, so that errors become non-errors, is an important part of our day-to-day work.
 
-Catastrophic failures often happen due to incorrect exception handling.
 
-More recent languages have gone back to communicating errors with return values, but with some twists.
+I want to point out that these techniques I've just mentioned are before-the-fact and after-the-fact.
+They are steps we take to prevent runtime errors from occurring in the first place, and to react to runtime errors that
+have already happened. When we apply these techniques we're using knowledge that we already have.
 
-Go and Rust both returned to the errors-as-data style.
+But importantly, there's also category of errors that we don't know about yet. We have code paths where an error
+can happen in certain cases, but we're simply not aware of that right now, at least we don't know it in any practical way.
+So another guiding idea here is that error handling design needs to confront uncertainty.
+When we think about how to handle runtime errors, we need to figure out how to deal with situations
+that we don't necessarily have concrete knowledge about now.
 
-Railway Oriented Programming provides a style for passing errors-as-data from function to function.
+So in the remainder of this talk I'm going to be talking about code, but I hope you'll keep these main ideas
+in mind, that good error handling design takes a holistic view of user experience and that it concerns situations
+that our code cannot fully anticipate.
 
-There are various factors to consider with errors-as-data vs. exceptions.
+Now I want to briefly talk about history.
+
+In the C language, error handling conventionally happened via return values.
+In this example C program we're making a system call to open a file, and that returns a file pointer.
+So if the returned file point is NULL, that opening the file failed. So I have logic here to check for a NULL return value,
+but if you look closely there's a bug, because I'm trying to write to the file outside of the conditional check.
+Writing to that non-existent file results in a segfault and the program is killed by the operating system.
+
+So in the next slide I've fixed that bug, and the program continues without crashing. Another interesting point here
+is that C has this special global variable called errno. It's a numeric code representing the last error that happened,
+and different C library functions will set the errno value so your program can check it.
+
+This works. But as a C programmer you don't have to check return values. And failing to check return values for errors
+turns out to be a very common cause of bugs, and those bugs can be very confusing, because they will often
+manifest somewhere downstream of the original problem and cause the program to suddenly crash, or write corrupt data,
+or even have a security vulnerability.
+
+So after C there was a stretch in the 80s and 90s where some new languages came out that
+became mainstream in commercial software development. These languages all brought a concept of Exceptions.
+
+Starting with this Java example, I'm trying to parse a string into an integer. It works for the string 1000 but then
+throws an exception for A grand. And this shows the general form of Exceptions:
+Try running some code, if it fails, jump to this other code to deal with the error.
+
+Next we see an example in Ruby, same exact concept, just using the words begin rescue ensure instead of try catch finally.
+And then we have a JavaScript example. An interesting point here is that JS has a built-in function
+to parse an integer from a string, but instead of throwing an exception it returns the value NaN. So I had to
+check for NaN and then explicitly throw an exception. But still, unlike C, JavaScript does support this same
+try catch finally construct with the error conveyed as an Exception.
+
+So Exceptions were a way of preventing the problem in C where the programmer forgets to check return values, because
+Exceptions forcibly re-route the code execution. But even though that's helpful it has a dark side. It's like walking
+on a minefield, any function call can blow up.
+And as a result it introduces implicit control flow, sort of like a GOTO statement. This can make program logic hard to reason about,
+because when you are reading the exception handling code, it's not always obvious what the context is, i.e. what
+are all the circumstances where we'd be running this code and what details do we need to clean up?
+
+And in fact, here is a formal study that analyzed bug reports from several big open source projects and found that 92% of
+catastrophic failures had happened due to incorrect exception handling. So a clear actionable step here is
+make sure to test exception handling code.
+
+But there are software engineers who just view the problems with Exceptions as making them a straight up undesirable tool.
+Some more recent languages that have become mainstream decided not to have exceptions at all. They went back to
+communicating errors with return values, like C, just with some twists.
+
+In Go, the big change compared to C is that functions return two distinct values, with the error value in the second position,
+so return values and errors are not overloaded. And ergonomically this is much better. But it's also worth noting
+that you are still free to ignore the error value.
+
+In Rust, they took the approach with functions that can fail where they wrap the return value in a Result type.
+So a Result data type has two variants, Ok or Err, and the Rust type checker forces you to cover those possibilities.
+So Rust doesn't have Exceptions, but it still prevents you from forgetting to handle errors.
+
+This style of wrapping a return value in Result type supports a functional style of programming, because instead of
+and exception side effect, you're just passing data in and getting data out.
+I'll show an example of that here. On this slide there are these three functions, parse_number, ensure_positive, and double.
+The first two functions return a Result type.
+
+So then in the next slide I have a program that uses these functions. It calls the two_track_computation function,
+and then two_track_computation starts out by calling parse_number, and the Result value flows into map_err which
+transforms the Result into another Result, and then it flows into the ensure_positive function, then it tries to
+double the result, and finally it produces a message depending on whether the Result is Ok or an Error.
+
+It's not important to understand all the details of Rust here, what's important is to see this pattern that the
+data is flowing in a linear way from function to function, with errors conveyed inside these Result values.
+There are no Exceptions that cause the control flow to jump.
+
+And this style is not unique to Rust, in 2014 an F# programmer named Scott Wlaschin wrote a blog post calling this style Railway Oriented Programming.
+It's this provides style where data is flowing through your program like it's on a railroad track, and as long as it's
+successful it keeps rolling along that success track, but if it encounters and error it switches to the error track.
+So you can string together a functional pipeline of this way. And sometimes this is a lot clearer to follow than if you had exceptions.
+
+So Ruby and JavaScript do have exceptions, but in these languages you can still code in a Railway Oriented style.
+And if you use Sorbet or TypeScript you can enforce that you handle the variants.
+
+But there are some issues to consider about that. And I'm going to mention a few of them.
 
 Most importantly, representing errors-as-data makes sense for errors that are part of the program's domain.
+That's really another way of understanding the common rule of thumb people give that exceptions should be exceptional.
+Exceptions should only be used for situations that are outside the expected cases this program is meant to support.
+But if the error in question is actually a well-defined part of the domain, then modeling it as a data value is helpful.
+An example of that which comes up a lot at Salsify is when we model the lifecycle of some entity using a database row with
+a status column, and we want to record failures and display them to the end user. It also comes up when we're processing
+a collection, and we know that it may fail for some items, but we do want to support that kind of best-effort partial success.
 
-Another tradeoff to consider with errors-as-data is loose coupling.
+Then another tradeoff to consider with errors-as-data is loose coupling.
+When a web API needs to return an error, how do we do it?
+In the API situation we need to put the error on the wire.
+We need to transmit it to a different computer running a different program, often written in a different programming language.
+So we send the error as data, sometimes just an HTTP response with status code 500 or 404,
+or a JSON payload with an errors field.
 
-Finally the practical consideration of are you working in a platform that has exceptions?
-    Clojure -> data-oriented, functional, but interop with Java.
-    Typescript -> type-checker supports static enforcement of Result types, but interop with JavaScript.
+And when we have two programs communicating remotely, there's this natural imperative to make them work with looser coupling.
+That's even one of the de facto motivations for microservices, forcing yourself to impose loose coupling.
+
+But even inside one program it may be useful to apply the lesson from web APIs,
+and pass pure data around in our program to promote modularity.
+If we want to have a clear boundary in our program, we can just ask: will this work if I only use data between these two parts?
+If I were to extract these two into separate programs, would it work to communicate over a web API or a message queue?
+Including signaling error situations?
+So if it's desirable for that answer to be use then communicating errors-as-data between those sub-systems of the program.
+
+Another practical tradeoff between exceptions and errors-as-data is are you working in a platform that has exceptions?
+So Clojure is a functional language that puts heavy emphasis on data-orientation, but it's also designed to have seamless interop with Java.
+
+And with TypeScript, we can use the type-checker to support static enforcement of Result types in a similar style to Rust, but TypeScript
+is of course meant to interop with JavaScript.
+
+OK so Java and JavaScript both throw exceptions, so realistically in these languages you need to deal with exceptions anyway,
+and sometimes that's going to push the decision to favor exceptions for the error handling approach.
+
+
 
 We have infrastructure for tracking exceptions (bugsnag).
 
