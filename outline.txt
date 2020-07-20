@@ -227,8 +227,69 @@ When a promise rejects but there's no catch chained onto it, the browser will fi
 The basic way to configure Bugsnag is to set up handlers for window.onerror and unhandledrejection events that notify bugsnag of the error.
 
 Ember.onerror abstracts over both of these.
-
 Salsify's error-reporting library abstracts over Ember.onerror.
+Ultimately, the error-reporting library configures reporting to Bugsnag.
+That setup happens once in Dandelion, and then applies to our mounted engines.
+
+So let me show some visual examples of what this means for us.
+
+Some people here will know that in dandelion, the client has an error handler for routes.
+If an Ember route runs its model hook and tries to load data from
+the API, but the API request fails and there's a rejected promise, then the client will
+flash an error message in a yellow bar near the top of the screen.
+So for failed API requests we should be providing feedback to the end-user that something went wrong.
+
+But let me show you an example.
+
+Here I'm looking at my list of Enhanced Content layouts, which comes from the EC Ember engine.
+In the video I'm about to play, I'm going click the pencil button to edit a layout.
+But under the hood, the API request to load that layout fails.
+And you'll see I click a few times trying to figure out what's going on, and finally
+I give up and go back to the products index page. Let's see what happens.
+
+watch...
+
+So no warning message for the failed layout edit request, but then I see the message randomly
+on the products index.
+
+Now the cause of this one is tricky, it's due to an interaction between the CSS we're using for
+the Enhanced Content layout list and the way that yellow error message bar works in dandelion.
+On one hand you could blame the EC engine for this. But I hope you can see that it's pretty difficult
+to understand how the EC engine will interact with dandelion in situations like this.
+
+Then also, in the client, making requests to the API is not the only thing that can fail.
+We can have errors in the JavaScript code itself, for example in the logic of an Ember component.
+
+So I want to look at another example. Here we're looking at the list of layouts again.
+
+Notice the rows of the table.
+They're Ember components. So we have a component representing the table row,
+and then inside that we have a component that displays what retailers you've published this layout to,
+and another component that shows the status of the layout,
+and finally on the far right there's action icons to edit the layout, duplicate, or delete it.
+
+So imagine that that "Most Recent Status" component throws an exception, what's going to happen?
+Well the overall layout table still renders, but because the status component errored, everything
+after that is gone. You can see there's no status, but also the action buttons aren't visible, and the
+table alignment is off. So for end-users the error is subtle.
+
+But, since we have Ember.onerror configured, we should hope at least report the error to Bugsnag right?
+So we as developers can at least find out about it and hopefully fix the problem.
+
+Well I'm sorry to say now, it turns out that's not guaranteed either. While I was prepping this
+talk I discovered that there are some issues with Ember.onerror where
+it doesn't actually capture all unhandled errors. For example in my tests an exception
+raised by a component action doesn't make it to Ember.onerror. So then I was looking into
+this and I found some other Github issues of where other errors don't make it to Ember.onerror.
+
+And interestingly I found this comment where Robert Jackson says that Ember should probably
+stop advising people to use Ember.onerror, in favor of the native window.onerror and unhandledexception.
+
+We need to get to microfrontends.
+
+
+
+
 
 Ember routes can display an error template if an error occurs while loading the route's data.
 
