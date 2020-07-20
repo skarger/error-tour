@@ -10,11 +10,11 @@ export default class App extends Application {
 }
 
 window.onerror = function(message) {
-  window.location.href = '/top-level-error?type=exception&message=${message}';
+  window.location.href = `/top-level-error?type=Exception&message=${message}`;
 }
 
 window.addEventListener('unhandledrejection', function(event) {
-  window.location.href = '/top-level-error?type=rejection&message=${event.reason}';
+  window.location.href = `/top-level-error?type=Rejected+Promise&message=${event.reason}`;
 });
 
 loadInitializers(App, config.modulePrefix);
