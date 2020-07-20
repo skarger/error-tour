@@ -1,0 +1,42 @@
+I tried to capture what those kinds of programs were that I was working on (when originally contemplating the design of Clojure).
+
+The words I came up with were "Situated Programs."
+
+You can distinguish these kinds of programs that sit in the world and are sort of entangled with the world. And they have a bunch of characteristics.
+
+One is that they execute for an extended period of time.
+
+ It's not just like "calculate this result and spit it over there."
+ It's not like a lambda function in AWS.
+
+These things run on an ongoing basis and they're wired up to the world.
+Most of these systems run continuously, 24/7.
+
+They almost always deal with information. They consume information, and it was vital to (their functionality), and in some cases they produce information.
+
+They have a time-extensive memory. That database isn't an input to the system that's fixed. It's something that gets added to as the system runs. These systems are remembering what they did. And they're doing it both for their own consumption and for the consumption of other programs.
+
+And they deal with real-world irregularity. This is the other thing that's super critical in this situated programming world. The real world is NEVER as elegant as you think. I've NEVER had a real-world system that didn't have these kinds of irregularities.
+
+Other aspects of situated programs: they rarely are their own little universe where they get to decide how things are and they don't need to interact with anyone else or agree with anyone else. Almost all these systems interacted with other systems. Almost all these systems interacted with people. People, and talking to people, is an important part of these programs.
+
+They remain in use for long periods of time. They're not throwaway programs.
+
+And they're also situated in a world that changes, so your best laid plans are there the day you wrote it, but then, the rules change.
+
+Another aspect of being situated is the software environment and community. Your program is rarely written from scratch. Invariably you're going to pull in some libraries. And when you do you've situated yourself in that library ecosystem.
+
+So when I talk about situated programs, and when I talk about the programs I've written in my career, one of them really sticks out: What's that? Clojure. Compilers. They're not like this. They don't have a fraction of these problems. They take some input right off the disk, they get to define the whole world. When you define a language, you try to make the most regular thing. And then your program is now I just have to enforce the rules that I made up for myself.
+
+And it really is a lot simpler. They don't generally use a database. They rarely talk over wires. So compilers and theorem provers and things like that are not like situated programs.
+
+So the title of this talk is Effective Programs, and what does "effective" mean? It means producing the intended result. And I really want this word to become important, because I'm really tired of the word "correctness," where correctness means, I don't know, made the type-checker happy. None of the consumers of these programs that I did professionally care about that. They care that the program works, for their definition of works.
+
+On the other hand, I don't want this to be taken as a recipe for hacking, just do anything that works. So we have to actually talk about what works means, what does it mean to actually accomplish the job of being effective? So what is programming about? I'm going to say, for me, programming is about making computers effective in the world. And I mean effective in the same that way that we talk about people being effective in the world. Either the programs themselves are effective, or they're helping people be effective. Now how are we effective?
+
+Most of the areas of human endeavor, we're effective because we've learned from our experience, and we can turn that experience into predictive power. Whether that's knowing not to step into a giant hole, or off a cliff, or not to walk towards the roaring lion, or how to market to people, or what's the right approach to doing this surgery, or what's the right diagnosis for this problem.
+
+People are effective because they learn, and they learn from experience, and they leverage that. So I'm going to say being effective is mostly, not about computation, but about generating predictive power from information.
+
+And especially, once we start pulling this into the programming world, experience equals information, equals facts about things that actually happened. That's the raw material of success in the world.
+
