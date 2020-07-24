@@ -7,14 +7,13 @@ int main(void)
    FILE * fp;
    fp = fopen("does-not-exist.txt", "r+");
 
-   if (fp == NULL) {
-     fprintf(stderr, "Value of errno: %d\n", errno);
-     perror("Error printed by perror");
+   if (fp != NULL) {
+     printf("\nWriting to file...\n");
+     fprintf(fp,"some data");
    } else {
-   printf("\nWriting to file...\n");
-   fprintf(fp,"some data");
+     printf("\nCannot write to non-existent file.\n");
    }
 
-   printf("\nHave a nice day.");
+   printf("\nHave a nice day.\n");
    return 0;
 }

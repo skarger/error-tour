@@ -96,28 +96,33 @@ that our code cannot fully anticipate.
 Now I want to briefly talk about history.
 
 In the C language, error handling conventionally happened via return values.
-In this example C program we're making a system call to open a file, and that returns a file pointer.
-So if the returned file point is NULL, that opening the file failed. So I have logic here to check for a NULL return value,
-but if you look closely there's a bug, because I'm trying to write to the file outside of the conditional check.
-Writing to that non-existent file results in a segfault and the program is killed by the operating system.
 
-So in the next slide I've fixed that bug, and the program continues without crashing. Another interesting point here
-is that C has this special global variable called errno. It's a numeric code representing the last error that happened,
-and different C library functions will set the errno value so your program can check it.
+In this example C program we're making a system call to open a file, and that returns a file pointer.
+Then we're trying to write to the file using that file pointer.
+
+But the file doesn't exist. Writing to that non-existent file results in a segfault and the program is killed by the operating system.
+
+So in the next slide I've fixed that bug.
+If the returned file point is NULL, that opening the file failed.
+So I have logic here to check for a NULL return value, and avoid writing to the file in that case,
+and the program continues without crashing.
 
 This works. But as a C programmer you don't have to check return values. And failing to check return values for errors
 turns out to be a very common cause of bugs, and those bugs can be very confusing, because they will often
 manifest somewhere downstream of the original problem and cause the program to suddenly crash, or write corrupt data,
 or even have a security vulnerability.
 
-So after C there was a stretch in the 80s and 90s where some new languages came out that
-became mainstream in commercial software development. These languages all brought a concept of Exceptions.
+So then there was a stretch in the 80s and 90s where some new languages came out that
+became mainstream in commercial software development.
+These languages here all brought a concept of Exceptions.
 
 Starting with this Java example, I'm trying to parse a string into an integer. It works for the string 1000 but then
 throws an exception for A grand. And this shows the general form of Exceptions:
 Try running some code, if it fails, jump to this other code to deal with the error.
 
-Next we see an example in Ruby, same exact concept, just using the words begin rescue ensure instead of try catch finally.
+Next we see an example in Ruby, same exact concept, just using the words begin rescue ensure
+instead of try catch finally.
+
 And then we have a JavaScript example. An interesting point here is that JS has a built-in function
 to parse an integer from a string, but instead of throwing an exception it returns the value NaN. So I had to
 check for NaN and then explicitly throw an exception. But still, unlike C, JavaScript does support this same
@@ -204,58 +209,139 @@ is of course meant to interop with JavaScript.
 OK so Java and JavaScript both throw exceptions, so realistically in these languages you need to deal with exceptions anyway,
 and sometimes that's going to push the decision to favor exceptions for the error handling approach.
 
+Lastly a very good reason to use exceptions is that it's a way to make them visible to us.
+With exceptions, we have infrastructure to report them to Bugsnag.
+
+That's important because a key challenge for us as developers is that errors are hard to see.
+They're usually low-frequency events, and they often only come out with real-world usage.
+That makes us discount their importance.
+
+Sometimes as developers we'll realize there's a potential for an error, but it's going to take
+more work to address it, and we just say that's an "edge case".
+
+But calling something an edge case is like a geometric idea. You have this square representing all the cases,
+and most of the cases are the yellow in the middle there, but there's a thin edge of cases around the outside
+that we're not covering well.
+
+But you need error reporting to understand the size of the edge.
+
+Is it more like this? And really we ought to deal with it.
+
+In a previous job we had a situation where most of the time it looked like this, but on the
+two days of the year when the times changed for daylight savings time, the edge was like this.
+And it was a disaster. But then we'd forget about it.
+
+So you really need records of the errors in order to prioritize, and reporting exceptions
+to Bugsnag is a pragmatic way to accomplish that.
+
+OK for the last portion of this talk I want to get into some more Salsify-specific
+details. Starting out on the backend, we do already have some error handling support
+in our shared libraries. Here's a snippet from the SalsifyGraphQL ruby gem.
+It will catch errors and this use our ExceptionReporter
+gem to send the error to Bugsnag, and then translate the error into an API response
+following GraphQL conventions for an error payload.
+(pause to look at code)
+
+For background jobs, Salsify has an extension to Delayed Job that has a similar approach
+of catching errors and reporting them to Bugsnag.
+(pause to look at code)
+
+So if you're using these libraries than you automatically have this basic error handling framework,
+which is great. But is it enough?
+
+What I think is that this is a great default, but at the level of an individual application,
+we have have more specific information, so we can do more. Inside an application, we can
+layer in our own handling so instead of just saying "report the error," we can tailor
+the approach to the specific action the user wanted to do that failed.
+
+Again, attaining high quality error handling means thinking holistically. A backend error strategy
+like this is a start. But once we translate the error into an API response payload,
+or for a background job, once we update a database row to record that this action failed, then what?
+The backend can't be the end of the story. We need to one more step to
+communicate the error to the end user, or whoever else ought to know.
+
+Making that final step, connecting the dots on the client side, really improves quality a lot.
+And there's a fairly straightforward effort to make, where it's like we have a checklist.
+Each time we add a new API request to the client, or each time we implement a new background job,
+one of the questions is what do we display when it fails? What information does the
+client need to obtain from the server to support that display?
+It's definitely more than zero additional effort, but not much more, to go a long way.
+
+Of course a way to make it easier is to not even devise a customized error display for each
+server interaction, but just decide on a generic way to render failed API requests
+and a generic way to show a list of failed background jobs. Those
+kinds of generic solutions won't always be as good UX as if you tailored it specifically,
+but still so much better than nothing.
+
+Let me point out, for API requests, we already do have something a little bit like that
+in the main Salsify client app in dandelion.
+
+There's a generic handler for when an Ember route tries to load data from
+the API, but the API request returns an error status like a 404 or 500.
+The client will flash an error message in a yellow bar near the top of the screen.
+So this at least provides feedback to the end-user that something went wrong.
+
+But let me show you a real example.
+In this video you'll see I'm looking at my list of Enhanced Content layouts.
+This screen comes from the Enhanced Content Ember engine.
+
+Then you'll see I'm going click the pencil button on the right to edit a layout.
+But under the hood, the API request to load that layout is going to fail.
+And then you'll see I click a few times trying to figure out what's going on,
+and finally I give up and go back to the products index page.
+
+Let's watch...
+
+So click, nothing happens, no feedback, I click again, then I give up and go to Products.
+
+Then randomly I see the yellow error bar on the products index.
+So yes Salsify has this standard UI feedback for failed API requests, but it's really not that clear.
+
+Now the cause of this one is tricky, it's a combination of the CSS we're using for
+the Enhanced Content layout list interacting with the way that yellow error message bar works in dandelion.
+On one hand you could blame the EC engine for this because the way it's creating the UI obscures the error bar.
+But I hope you can see that when we're working on an engine like this, it's pretty difficult to understand
+the edge cases of how it will interact with dandelion. And point of fact, this problem has existed in
+enhanced content for a year, and we never knew about it until I prepared this tech talk.
+It's a low frequency event that's difficult to discover in dev.
+
+This is a place where the microfrontends project should help, because hopefully a micro-app will
+be able to manage it's full UI, including error display, so we should be able to pull off this
+holistic error handling more easily.
+
+In any case, architecturally, I want to call out the tactic that SalsifyGraphQL and DelayedJob extensions
+are taking, where they handle error at the boundaries. It's at the entrypoints to the program,
+where an API request comes in, or at the top-level of executing a background job. These are
+natural places to build error handling foundations because they're often the starting point for some
+business domain action, which helps clarify how communicate to the end user.
+
+Other examples
+of boundaries on the backend are when we try to save to the database, or when we make an HTTP request
+to another service. These boundary points are  prone to errors and also
 
 
-We have infrastructure for tracking exceptions (bugsnag).
+But on the client, at a first approximation, we can adopt the same concept of handling errors
+at the boundaries. An API response is one of a few natural entry-points to the frontend program.
 
-Conversely, there are several criteria for when to use Exceptions.
+But there are some pragmatic issues to deal with that I'll go into now.
 
-Bugs (programming errors), exceptional cases that are outside the program domain.
 
-HTTP requests are a subtle example of this. In some cases they are recoverable, but we will often want them to become exceptions.
-
-JS Error objects have a name and a message, and a catch block can identify error type using the instanceof operator.
-
-When a JS runtime error happens but it's not handled by any catch block, the browser will fire the window.onerror event. This can be configured to run a function as a last resort error handler.
-
-try-catch works for async-await.
-
-A try-catch block will not catch rejected promises. A promise must chain a catch call to handle the promise rejection.
-
+When a JS runtime error happens but it's not handled by any catch block,
+the browser will fire the window.onerror event.
+This can be configured to run a function as a last resort error handler.
 When a promise rejects but there's no catch chained onto it, the browser will fire the unhandledrejection event. Like window.onerror, this can be configured as a last resort handler for rejected promises.
 
-The basic way to configure Bugsnag is to set up handlers for window.onerror and unhandledrejection events that notify bugsnag of the error.
 
-Ember.onerror abstracts over both of these.
+
+
+Ember provides a function, Ember.onerror, that's meant as a backstop for unhandled errors.
 Salsify's error-reporting library abstracts over Ember.onerror.
 Ultimately, the error-reporting library configures reporting to Bugsnag.
-That setup happens once in Dandelion, and then applies to our mounted engines.
+That happens once in Dandelion. That one-time setup then applies to our mounted engines.
 
-So let me show some visual examples of what this means for us.
+But there are issues with this. Let me walk through some examples.
 
-Some people here will know that in dandelion, the client has an error handler for routes.
-If an Ember route runs its model hook and tries to load data from
-the API, but the API request fails and there's a rejected promise, then the client will
-flash an error message in a yellow bar near the top of the screen.
-So for failed API requests we should be providing feedback to the end-user that something went wrong.
 
-But let me show you an example.
-
-Here I'm looking at my list of Enhanced Content layouts, which comes from the EC Ember engine.
-In the video I'm about to play, I'm going click the pencil button to edit a layout.
-But under the hood, the API request to load that layout fails.
-And you'll see I click a few times trying to figure out what's going on, and finally
-I give up and go back to the products index page. Let's see what happens.
-
-watch...
-
-So no warning message for the failed layout edit request, but then I see the message randomly
-on the products index.
-
-Now the cause of this one is tricky, it's due to an interaction between the CSS we're using for
-the Enhanced Content layout list and the way that yellow error message bar works in dandelion.
-On one hand you could blame the EC engine for this. But I hope you can see that it's pretty difficult
-to understand how the EC engine will interact with dandelion in situations like this.
 
 Then also, in the client, making requests to the API is not the only thing that can fail.
 We can have errors in the JavaScript code itself, for example in the logic of an Ember component.
