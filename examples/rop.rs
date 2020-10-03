@@ -2,6 +2,7 @@ fn main() {
     println!("{}", two_track_computation("1000"));
     println!("{}", two_track_computation("A grand"));
     println!("{}", two_track_computation("0"));
+    println!("{}", "Have a nice day.");
 }
 
 fn two_track_computation(input : &str) -> String {
