@@ -410,62 +410,55 @@ It's a great default, but to attain high quality error handling we have to do mo
 What I've shown so far is backend only. But once we translate the error into an API response payload,
 or in the case of a background job, once we update a database row to record that this action failed, then what?
 
-The backend can't be the end of the story. We still need to
-communicate the error to the end user, or whoever else ought to know.
+The backend can't be the end of the story. We still need to communicate the error to the end user.
 
 Making that final step, connecting the dots on the client side, really improves quality a lot.
 That's an obvious point but in real world development it's easy for it to fall through the cracks.
 
 NS
-Now just as with the backend libraries, we already do have generic error handing built-in to the main Salsify client app.
+Now just as with the backend libraries, we already do have some built-in error handing within the main Salsify client app.
 
-When an Ember route tries to load data from the API, but the API request returns an error status like a 404 or 500,
-the client will flash an error message in a yellow bar near the top of the screen.
-So this at least provides feedback to the end-user that something went wrong.
+What that error handler service provides is when an Ember route tries to load data from the API,
+but the API request returns an error status like a 404 or 500,
+the client will flash an error message in a bar near the top of the screen.
+It's a bit generic but at least it's providing feedback to the end-user that something went wrong.
 
 But remember those Enhanced Content examples I showed at the beginning where the API returned errors
-but the end user had no signal of that. Why didn't we see that yellow warning?
+but the end user had no signal of that. Why didn't we see that warning bar?
 
 Let me show you another real example.
 In this video you'll see I'm looking at my list of Enhanced Content layouts.
 This screen comes from the Enhanced Content Ember engine.
 
-Then you'll see I'm going click the pencil button on the right to edit a layout.
-But under the hood, the API request to load that layout is going to fail.
-And then you'll see I click a few times trying to figure out what's going on,
-and finally I give up and go back to the products index page.
+Then you'll see I'm going click one of the layout rows and then click the button to copy it.
+But under the hood, the API request to load that layout is going to fail. You'll see that below in my network tab.
 
 Let's watch...
 
-So click, nothing happens, no feedback, I click again, then I give up and go to Products.
-
-Then randomly I see the yellow error bar on the products index.
+So click, copy, nothing happens, no feedback.
 
 So, in theory Salsify has this standard UI feedback for failed API requests,
 but in practice it's not always working.
 
-Now the cause of this isn't working here is tricky. It's a combination of the CSS we're using for
-that Enhanced Content layout list interacting with the way that yellow error message bar works in dandelion.
+Now the reason this isn't working here is bit tricky.
+The problem is that the scope for the error message is set to the copy modal, but that modal isn't visible when the error occurs.
+That's why you don't see the flash message.
 
-On one hand you could blame the EC engine for this because the way it's creating the UI obscures the error bar.
-But I hope you can see that when we're working on an engine like this, it's difficult to understand
-all the details of how it will interact with dandelion.
-
-And point of fact, this problem has existed in
-Enhanced Content for a year, and I only know about it because I prepared this tech talk.
-It may have happened to customers but we haven't heard about it.
+On one hand you could blame the EC engine for this, because it has an error in its error handler.
+But when we're working on an engine like this, in a normal development workflow we can't see that error behavior,
+because it's provided by the main app in dandelion. The only way to see it is to package the engine into dandelion
+and test end-to-end, including forcing the backend API server to return a 500.
+The fact is that problem has existed for awhile but I only discovered it because I was preparing this tech talk.
 
 Also with our current setup, it's actually impossible to write an automated test
-in Enhanced Content that exercises the UI behavior for a failed API request,
-because the error message bar lives in dandelion.
+in the Enhanced Content engine that exercises the UI behavior for a failed API request,
+again because the error message bar lives in dandelion.
 
 This is a place where the microfrontends project should help, because hopefully a micro-app will
 be able to manage more of its own UI, including its error display.
 
 Still though, I'd say the dandelion client has the right overall idea to have a default
 behavior where if an API request fails, let's at least provide some visual feedback.
-If a specific client app defines more specific error handling for a particular user action,
-then that's nice. But the baseline for quality is to make sure to communicate something.
 
 It ultimately doesn't matter whether the server indicates errors in a well-formatted way,
 if we don't carry that through end-to-end so that the client to communicates the problem to the user.
@@ -535,23 +528,31 @@ So we have a component representing the table row,
 Build Out
 and then inside that we have a component that displays what retailers you've published this layout to,
 Build Out
-and another component that shows the status of the layout,
-and finally on the far right there's action icons to edit, duplicate, or delete it.
+and another component that shows the status of the layout.
 
 So imagine that that "Most Recent Status" component throws an exception, what's going to happen?
 
 NS
 Well the overall layout table still renders, but because the status component errored, everything
-after that is gone. You can see there's no status, but also the action buttons aren't visible,
-and as a side effect the table alignment is off. So again for end-users the error behavior is subtle.
+after that is gone. You can see there's no status, but also the rows after the first one aren't showing.
 
-Now more than anything else, you want this reported to Bugsnag so you know about it
-and can address it and prevent it from happening in the future. But is there anything more to do?
+Build Out
+Also, unexpectedly the error thrown by that layout status component also causes
+this Amazon quota bar up at the top to break as well, where now it's not showing counts anymore.
+That's a random side effect of the fact that that the Amazon count is asynchronously fetched,
+and the layout status component errored before it was processed.
 
-A heavy-handed approach would be to handle the error by fully redirecting to an error page.
-Honestly that would be a decent approach, because it makes the problem more visible and it's more likely we'll fix it.
-But another solid and lighter-touch approach would be to just flash a message at the top of the page saying that an error occurred.
-Then at least the user can understand why the page looks weird.
+So bottom line, again for end-users the behavior when errors happen is puzzling.
+The page definitely looks off, but there's no direct message that an error occurred.
+
+So more than anything else, we want errors this reported to Bugsnag so we
+can address it and prevent it from happening in the future. But is there anything more to do?
+
+A heavy-handed approach would be to handle errors by fully redirecting to an error page.
+Honestly that would be a decent approach, because it makes the fact that there's a problem very obvious.
+But another slightly more complicated but more finesse approach would be to
+just flash a message at the top of this page saying that an error occurred.
+Then at least the user will have a clear understanding why the page looks weird.
 
 NS
 
