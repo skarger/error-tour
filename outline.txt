@@ -12,6 +12,10 @@
 
 
 Hi everyone, I'm Stephen Karger, thank you for attending today.
+I've wanted to do this tech talk for a long time.
+Actually I wrote down my first thoughts about it early this year
+right before the pandemic started, so then I put it on the back burner for awhile.
+But I'm happy to be here now.
 
 OK, before I get into the specific topic this talk is all about
 I want start out with a bigger question.
@@ -69,10 +73,12 @@ This talk is a deep dive on that last aspect of quality, error handling.
 Something I've noticed across my software engineering life is that it's really common
 to deal with error handling case-by-case when we have to, and basically invent ad-hoc solutions.
 And as a result it's always a little messy.
-But that means being a little more deliberate with error handling is a clear path towards higher quality software development.
+But that means being a little more deliberate with error handling is a clear path
+towards building higher quality software.
 
 Now let me say I expect that people will already be at least somewhat familiar with the ideas I'll cover here.
-But still my hope is that you'll find it interesting and thought-provoking to see this material presented all together.
+But still my hope is that you'll find it interesting and thought-provoking
+to see this material presented all together.
 
 
 NS
@@ -120,6 +126,9 @@ Testing, type checking, and code review are all helpful for preventing errors.
 
 NS
 But we all know our software still has errors in production.
+So what should we do?
+
+Build out
 Over time we learn about bugs and we fix them,
 say by supporting a case we hadn't known about before,
 or telling the user to correct their input,
@@ -139,15 +148,16 @@ Our application has a code path where an error can happen,
 but we're not aware of that right now,
 or sometimes we are aware but we assume it's very low probability.
 
-That is, a guiding idea here is that error handling design needs to confront uncertainty.
+Therefore a guiding idea here is that error handling design needs to confront uncertainty.
 When we think about how to handle runtime errors, we're designing for situations
 that we don't have full knowledge about at this moment.
 
-So in the remainder of this talk I'm going to be talking about code,
+So in the remainder of this talk we're going to be deeper in the weeds, looking at code,
 but I hope you'll keep this main idea in mind:
 
 That error handling concerns situations that we do not fully anticipate,
-and it follows that the first principle behind error design is communication. A good error design needs to provide guidance for
+and it follows that the first principle behind error design is communication.
+A good error design needs to provide guidance for
     how do we inform end users that something went wrong.
     but also:
         how do we inform customer support,
@@ -196,6 +206,7 @@ It works for the string 1000 but then throws an exception for the string A grand
 And this shows the general form of Exceptions:
 Try running some code, if any of the statements fail,
 then immediately jump to the catch block, and execute that other code instead.
+And then, regardless of what happened, execute the finally block.
 
 NS
 Next we see an example in Ruby, same exact concept, just using the words begin rescue ensure
@@ -220,8 +231,13 @@ it's not always obvious what the context is. How did we get here? What are all t
 we'd be running this handler code and what details do we need to clean up?
 Will we even have the references in scope that we would need to clean up?
 
+And many software engineers out there see Exceptions as an overused technique.
+It's too common to use them for control flow, and it becomes difficult to handle exceptions safely.
+
+
 NS
-And some software engineers out there view the problems with Exceptions as unacceptable.
+In fact some people view these problems with Exceptions as unacceptable.
+
 Recent languages that have become mainstream decided not to have exceptions at all.
 They went back to communicating errors with return values, like C, just with some twists.
 
@@ -244,9 +260,11 @@ you're just passing data in and getting data out.
 
 NS
 I'll show a more involved example of that next.
-On this slide there are these three helper functions, parse_number, ensure_positive, and double.
-parse_number tries to convert a string to an integer and returns a Result type, where the Err type is a ParseIntError,
-ensure_positive checks if an integer is greater than 0 and returns a Result type, where the Err value is a String,
+On this first slide I've written these three helper functions, parse_number, ensure_positive, and double.
+parse_number tries to convert a string to an integer and returns a Result type,
+where the Err value is a ParseIntError,
+ensure_positive checks if an integer is greater than 0 and returns a Result type,
+where the Err value is a String,
 and double just multiplies a number by 2 and returns a plain number.
 <pause>
 
@@ -256,7 +274,8 @@ main calls the two_track_computation function and passes it different strings.
 The reason I've called it two_track_computation will be clear in a moment.
 
 Looking at two_track_computation, it starts out by calling parse_number,
-and the Result value flows into map_err which just formats the error,
+and the Result value flows into map_err which is just there
+to adjust the type of Err value to a string,
 and then it flows into the ensure_positive function, then it tries to
 double the result, and finally it produces a string value depending on
 whether the Result was Ok or an Error.
@@ -573,7 +592,7 @@ as a default we can just say something like "Failed to load your Enhanced Conten
 "This attempt to publish your content failed."
 
 But it's a little more complicated on the client side because we have so many entry points.
-Every client side route is an entry point, but so is every nested component, and every component action.
+Every attribute in every nested component and every component action are independent entry points that can error.
 
 So one hand I do think it's possible to pursue same pattern on the client side, where we handle errors
 individually at all of those entry points, but it's a lot of effort.
