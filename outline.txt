@@ -68,13 +68,11 @@ This talk is a deep dive on that last aspect of quality, error handling.
 
 Something I've noticed across my software engineering life is that it's really common
 to deal with error handling case-by-case when we have to, and basically invent ad-hoc solutions.
-But that means that being a little more deliberate with error handling is an actionable way to do higher quality software development.
+And as a result it's always a little messy.
+But that means being a little more deliberate with error handling is a clear path towards higher quality software development.
 
-Now let me say I expect that people here will already be familiar with a lot of the material I'll cover,
-but still, I can tell you that even while preparing this talk
-I've refined my own mental framework for how I consider error handling approaches,
-and I shifted some of my opinions.
-So I hope you'll find it thought provoking to see this material presented all together.
+Now let me say I expect that people will already be at least somewhat familiar with the ideas I'll cover here.
+But still my hope is that you'll find it interesting and thought-provoking to see this material presented all together.
 
 
 NS
@@ -392,7 +390,7 @@ but the truth is we already do that to some degree in our shared libraries.
 
 Starting out on the backend, here's a snippet from the SalsifyGraphQLServer ruby gem
 which I've shortened to show on the slide.
-It catches errors and uses our ExceptionReporter gem to send the error to Bugsnag,
+For every GraphQL request, this BaseController will catch errors and use our ExceptionReporter gem to send the error to Bugsnag,
 then finally it translates the error into an API response following GraphQL conventions for an error payload.
 
 There is more to it than that, in reality it handles more distinct errors, and also reports the error to New Relic.
@@ -403,22 +401,21 @@ For background jobs, Salsify has an extension to Delayed Job.
 It has a similar approach of catching errors and reporting them to Bugsnag.
 (pause to look at code)
 
-So if you're using these libraries then you automatically have this basic error handling framework. But is it enough?
+So if you're using these libraries then you automatically have this basic error handling framework.
+And this is a very helpful default, but by itself it's not enough to attain high quality error handling.
 
-It's a great default, but to attain high quality error handling we have to do more.
-
-What I've shown so far is backend only. But once we translate the error into an API response payload,
-or in the case of a background job, once we update a database row to record that this action failed, then what?
+What I've shown so far is backend only. But once we translate the error into an API response payload, then what?
+Or in the case of a background job, once we update a database row to record that this action failed, then what?
 
 The backend can't be the end of the story. We still need to communicate the error to the end user.
 
 Making that final step, connecting the dots on the client side, really improves quality a lot.
-That's an obvious point but in real world development it's easy for it to fall through the cracks.
+That may be an obvious point but in real world development it's easy for it to fall through the cracks.
 
 NS
 Now just as with the backend libraries, we already do have some built-in error handing within the main Salsify client app.
 
-What that error handler service provides is when an Ember route tries to load data from the API,
+What the frontend error handler service provides is when an Ember route tries to load data from the API,
 but the API request returns an error status like a 404 or 500,
 the client will flash an error message in a bar near the top of the screen.
 It's a bit generic but at least it's providing feedback to the end-user that something went wrong.
@@ -426,10 +423,9 @@ It's a bit generic but at least it's providing feedback to the end-user that som
 But remember those Enhanced Content examples I showed at the beginning where the API returned errors
 but the end user had no signal of that. Why didn't we see that warning bar?
 
-Let me show you another real example.
-In this video you'll see I'm looking at my list of Enhanced Content layouts.
-This screen comes from the Enhanced Content Ember engine.
+Let me show you another real example. This screen comes from the Enhanced Content Ember engine.
 
+In this video you'll see I'm looking at my list of Enhanced Content layouts.
 Then you'll see I'm going click one of the layout rows and then click the button to copy it.
 But under the hood, the API request to load that layout is going to fail. You'll see that below in my network tab.
 
@@ -450,27 +446,31 @@ because it's provided by the main app in dandelion. The only way to see it is to
 and test end-to-end, including forcing the backend API server to return a 500.
 The fact is that problem has existed for awhile but I only discovered it because I was preparing this tech talk.
 
-Also with our current setup, it's actually impossible to write an automated test
-in the Enhanced Content engine that exercises the UI behavior for a failed API request,
+Also with our current setup, it's difficult to write an automated test
+in the Enhanced Content engine that realistically exercises the UI behavior for a failed API request,
 again because the error message bar lives in dandelion.
 
-This is a place where the microfrontends project should help, because hopefully a micro-app will
-be able to manage more of its own UI, including its error display.
+This is a place where the micro-frontends initiative should help, because a micro-app will
+be able to manage more of its own UI, including its error display, so we won't have the same pitfalls as with an engine.
 
-Still though, I'd say the dandelion client has the right overall idea to have a default
+Still though, I'd say the current dandelion client has the right overall idea to have a default
 behavior where if an API request fails, let's at least provide some visual feedback.
 
-It ultimately doesn't matter whether the server indicates errors in a well-formatted way,
-if we don't carry that through end-to-end so that the client to communicates the problem to the user.
+Because it ultimately doesn't matter whether the server indicates errors in a well-formatted way,
+if we don't carry that through end-to-end so that the client communicates the problem to the user.
 
 By the way in these examples I focused on synchronous web requests but communication of background job failures
 might be even more important for a lot of Salsify features.
 
-We have the error reporting extension for DelayedJob, but for communicating background job failures to end users,
+As I showed before we have the backend error reporting extension for DelayedJob,
+but for actually communicating background job failures to end users,
 that's an example where the status quo is to figure it out ad hoc.
-Each time we add a new background job, candidly the approach for handling job failures usually isn't covered.
-Then when we see failures in production it's like OK now we need to devise some UX to handle this unique case.
-As a baseline it really improves quality to always determine a plan for how to communicate those failed background jobs.
+Usually, each time we add a new background job, the approach for handling failures isn't covered.
+Then over time we see failures in production and it's like OK now we need to devise some UX to handle this case.
+And we're starting out with basic questions like, what even screen do we show the error on? Or instead of showing it in the client, should we send an email?
+
+So one actionable takeaway here is every time we add a new background job, consider how to communicate when it fails, and then verify that it works.
+Similarly, for any API request the client makes, a good baseline for failures is verify that it flashes a generic error message bar in the style of the main dandelion client.
 
 NS
 Beyond server errors, I want to cover errors in the client itself,
@@ -487,19 +487,21 @@ Build Out 2
 
 When a JS runtime error happens but it's not handled by any catch block,
 the browser will fire the window.onerror event.
-This can be configured to run a function as a last resort error handler.
+That can be configured to run a function as a last resort error handler.
 
 
 NS
-For rejected promises it's slightly different.
+For rejected promises, similar idea but slightly different.
+
 Build Out
 Here I have a promise that will reject because it tries to parse HTML as JSON.
+But in this code there's no catch chained onto the promise.
 
 NS
-But in this code there's no catch chained onto the promise.
+In this case the browser will fire the unhandledrejection event.
+
 Build Out
-In this case the browser will fire the unhandledrejection event. Like window.onerror,
-this can be configured as a last resort handler for rejected promises.
+Like window.onerror, this can be configured as a last resort handler for rejected promises.
 
 In fact, the basic way to configure Bugsnag on the browser side is to set up window.onerror and unhandledrejection
 to report errors to Bugsnag.
@@ -512,21 +514,21 @@ And then Salsify's error-reporting library abstracts over Ember.onerror.
 Ultimately, the error-reporting library configures reporting to Bugsnag.
 That happens once in Dandelion. That one-time setup then applies to our mounted engines.
 
-But it does mean that in your engine you can't use these top-level error events yourself.
-In particular you can't use them as a way to communicate problems to end users in addition to reporting to Bugsnag.
-This is another place where the microfrontends project will enable improvements.
+But it does mean that in your engine you can't use these top-level error events itself.
+In particular you can't use them as a way to communicate problems to end users, in addition to the Bugsnag reporting.
+This is another place where the micro-frontends project will enable improvements.
 
 NS
-I want to show an example of a client error to make this more visual.
+Now let me make this more visual with an example of a client error.
 Here we're looking at the list of Enhanced Content layouts again.
 
 Notice the rows of the table. They're Ember components.
 
 Build Out
-So we have a component representing the table row,
+So we have a component representing the table row, and it includes some of the row data itself
 
 Build Out
-and then inside that we have a component that displays what retailers you've published this layout to,
+but then inside it we have a component that displays what retailers you've published this layout to,
 Build Out
 and another component that shows the status of the layout.
 
@@ -548,75 +550,106 @@ The page definitely looks off, but there's no direct message that an error occur
 So more than anything else, we want errors this reported to Bugsnag so we
 can address it and prevent it from happening in the future. But is there anything more to do?
 
-A heavy-handed approach would be to handle errors by fully redirecting to an error page.
+A heavy-handed approach would be to handle client-side errors like this by fully redirecting to an error page.
 Honestly that would be a decent approach, because it makes the fact that there's a problem very obvious.
-But another slightly more complicated but more finesse approach would be to
-just flash a message at the top of this page saying that an error occurred.
-Then at least the user will have a clear understanding why the page looks weird.
+A more finesse approach would be to display a message on the same page that an error occurred.
+Although as you can see in this example, the effects of an error on the page rendering can be unpredictable.
+That's why I am more confident that the full redirect-on-error approach will work for any arbitrary unhandled error.
+It's a little severe, but again for an unexpected error our strategy devolves to communication,
+so being loud and clear seems OK.
 
 NS
 
-I want to go back to the server-side for a minute and discuss
+I want to go back to the server-side for a moment and discuss
 the tactic that SalsifyGraphQL and DelayedJob extensions take, where they handle errors at the edges.
 It's at the entrypoints to the program, where an API request comes in, or at the top-level of executing a background job.
 These are starting points for some business domain action. They're good seams for communicating errors.
 
-If we handle all errors at the boundary of the action, then that provides a natural
-subject to communicate about to the end user. If it failed, then no matter why it failed,
-whatever deep internal area of the application where the problem occurred, as a default
-we can just say something like "Failed to load your Enhanced Content layout," or
+If the backend handles all errors at the boundary of the action,
+then that provides a natural subject to communicate about to the end user.
+If it failed, then no matter why it failed,
+whatever deep internal code of the application where the problem occurred,
+as a default we can just say something like "Failed to load your Enhanced Content layout," or
 "This attempt to publish your content failed."
 
 But it's a little more complicated on the client side because we have so many entry points.
-First every client side route is an entry point, but so is every nested component, and every component action.
+Every client side route is an entry point, but so is every nested component, and every component action.
 
 So one hand I do think it's possible to pursue same pattern on the client side, where we handle errors
-at all of those entry points, but it's a lot of effort.
-Conversely, those the top-level browser events for unhandled errors are a more coarse grained way to handle errors,
-but it's a good starting point. It's a good way to create a backstop so we have a baseline communication in place
+individually at all of those entry points, but it's a lot of effort.
+Conversely, those top-level browser events for unhandled errors are a more coarse grained way to handle errors,
+but it's a good default. It's a good way to create a backstop so we have a baseline communication in place
 for errors, and then put most of our effort into preventing the errors from re-occurring.
 
 NS
-There's a great talk by Gary Bernhardt called Boundaries, where he
+OK quick detour. There's a great talk by Gary Bernhardt called Boundaries, where he
 talks about a couple common problems that arise in automated test suites.
-One problem is that often the tests are slow, say because we're reading and writing to the database a lot,
-or spinning up a web browser to verify the rendered UI. But then the other big problem is over-using
+One problem is that often the tests are slow, for example because we're reading and writing to the database a lot,
+or spinning up a web browser to verify the rendered UI. But then the opposite problem for is over-using
 test mocks. Even though mocking can help the tests go faster, it often leads to brittle tests that
-are just repeating your implementation, rather than actually verifying the intended behavior.
+essentially just repeat your implementation, rather than actually verifying the intended behavior.
 
 And so the solution he articulates is what he calls Functional Core, Imperative Shell. The idea is
 that you write most of your code in a functional style, where you're just passing data to functions
-and getting data back, it's just your program logic.
+and getting data back. Most of your code is restricted to domain logic.
 
 And only at the edges of the program do you deal with the messy,
 side-effecty things like the database and external APIs.
 And then for your tests, for the majority of code, you won't even need to bother with mocks,
 you can safely execute the production code,
-and it will be pretty fast since you're not doing any side-effects.
+and mostly it will go fast since you're not doing any side-effects.
 
-Well we can apply a similar idea to error handling, where we push it to the boundaries, and then
-in the core of the programs we don't even mess around with error handling at all.
+Well we can apply a variation on this idea for thrown exceptions.
+Now I admit I'm stretching the metaphor because exceptions are a side effect themselves,
+so by definition we're no longer talking about pure functional programming.
 
-In real-life a lot of the code I've read and code I've written myself has
-error handling logic strewn throughout the codebase.
+Still though, we can translate the idea, and push error handling to the boundaries.
+Then in the core of our programs we don't mess around with error handling at all.
+
+This approach is different that a lot of the code I've read and code I've written myself in real-life,
+which has error handling logic strewn throughout the codebase.
 
 And granted, one reason for that is sometimes we have to deal with functions that throw exceptions
 for cases that aren't really exceptional, where really it would be better
-if you just got a return value but instead you have to catch an exception.
+if you just got some domain-specific return value but instead you have to catch an exception.
 
-But the other big reason why real code often has error handling all over the place is that
-we don't have a clear overall error design for the project.
+But the other big reason why real-world code often has error handling all over the place comes back to
+the common situation that a project doesn't have a clear overall error design.
 
-But if we create confidence that the app will deal with an exception adequately at the boundaries,
-then we wouldn't need to throw in ad hoc handling at lower levels.
+But if we create confidence that the app will deal with exceptions adequately at the boundaries,
+then we wouldn't feel the need to throw in ad hoc handling at lower levels.
 
-So:
-Focus on an error design for the boundaries first, and only layer in
-more nuanced exception handling at intermediate levels of the program in small doses in situations
-where your program can actually take a useful action in response to the error besides communicating it.
+So to wrap up:
+Historically, the way that programming languages signal errors blurs together different issues.
 
-The key assumption there is that exceptions effectively represent bugs in your program.
-You don't know about them yet. If you did, you could edit your code to prevent those exceptions from happening
-in the first place, just treat them as normal variants in your domain.
-But your program isn't prepared for these exceptional cases right now so you might as
-well just eject all the way to the boundary of the program and communicate that this action failed.
+There are problems that we expect and they're actually just an infrequent but normal situation in our domain,
+and we can write code to deal with that situation. At that point from our program's point of view
+it's no longer really an error, it's just another case that this program covers.
+
+Then there are problems where we know in advance that they will happen, but we decide that do not want to expand our
+program's domain to cover them. Again a common example of that is when our backend services
+make HTTP requests to each other, and we know we will get responses with error status codes sometimes,
+but that's an implementation detail. There isn't a nice way to integrate that into our program's domain model,
+so we call it an exception and bail out.
+And third there are unexpected problems, like logical bugs in our code, or running out of memory.
+We do know that errors like this will happen, but we don't know exactly where ahead of time.
+
+And it's worth noting that a given error can move across these categories over time.
+
+Ultimately the crux of this talk is about those errors that are outside our domain,
+whether we expect them ahead of time or not.
+The key insight is that we our only real recourse for these is communication.
+That's challenging to pull off because it's not totally clear who is responsible.
+Devising the approach takes collaboration between engineering, product, and UX.
+But taking that extra step makes a huge difference in quality.
+
+And finally, a helpful design framework is to build error handling into the boundaries of our programs.
+
+It's easy to preach best practices in a tech talk but day-to-day when we're focused on feature development
+it's hard to grow the scope of any given Jira ticket in order to sort out error handling.
+So a way to make this stuff actionable is set up error handling at the boundaries.
+Then in the bulk of programs we can ignore errors because we're confident that when they happen,
+we will adequately communicate to users, and also give ourselves enough information to make any necessary updates.
+
+OK that's it, thank you.
+
