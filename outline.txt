@@ -1,20 +1,11 @@
 
 1. Memorize your introduction and conclusion.
-2. It’s not about you.
-3. Do everything you can to help them hear and understand you. People are bad at listening.
-    Use short words, sentences and paragraphs to express your ideas;
-    physical, concrete and vivid images that appeal to the senses;
-    and active verb choices in place of abstract or passive language.
-4. Don’t drown your audience in data.
-5. Eliminate anything that doesn’t clearly support your purpose.
-    If a slide, statistic, joke, or anecdote doesn’t serve your goal, cut it.
-6. Record yourself or practice in front of real people — or both, if you can.
 
 
-Hi everyone, I'm Stephen Karger, thank you for attending today.
-I've wanted to do this tech talk for a long time, and I'm happy to be here today.
+Hi everyone, I'm Stephen Karger.
+Thank you for attending, it's good to see everyone.
 
-So the material will range about 40 - 45 minutes, and if then I'll be happy to take questions or comments from people who stick around til the end.
+So the material will range about 45 minutes, so there will be a little time at the end if people want to stick around for questions or comments. So let's get started.
 
 OK, before I get into the specific topic this talk is all about
 I want start out with a bigger question.
@@ -162,7 +153,8 @@ So in the remainder of this talk we're going to be deeper in the weeds, looking 
 but I hope you'll keep this main idea in mind:
 
 That error handling concerns situations that we do not fully anticipate,
-and it follows that the first principle behind error design is communication.
+and it follows that the first principle behind error design is communication, because we can't fully automate the response to something that's unexpected.
+
 A good error design needs to provide guidance for
     how do we inform end users that something went wrong.
     but also:
@@ -322,7 +314,7 @@ precise by saying that it's actually Exceptions that are for dealing with situat
 When something happens that really is outside the circumstances this program is intended to support,
 exceptions are a nice way to just bail out immediately.
 
-I will say that it can be fuzzy to say whether something is a normal expected problem or if it's exceptional.
+I will say that it can be fuzzy to say decide something is a normal expected problem or if it's exceptional.
 An example of that which comes up at Salsify is when we make HTTP requests
 between our backend services. It's well within the domain of HTTP in general
 that you can receive a 404 or a 500 response, they're not really exceptional.
@@ -337,7 +329,7 @@ So raising an exception when we see that 404 response actually is a solid strate
 NS
 Then another tradeoff to consider with errors-as-data is loose coupling.
 Thinking again of a web API, when it needs to return an error, how do we do it?
-In that case we're obligated to put the error on the wire.
+We're obligated to put the error on the wire.
 We need to transmit it to a different computer running a different program.
 So we send the error as data, maybe an HTTP response with status code 500 or 404,
 or maybe we send a JSON payload with an errors field.
@@ -348,13 +340,13 @@ there's this imperative to make them work with looser coupling.
 But even inside one program it may be useful to apply that lesson from web APIs,
 and pass pure data around in our program to promote modularity.
 If we want to have a clear boundary in our program, we can ask:
-Will this work if I only can pass data between these two sub-systems of the program?
+Will this work if I only can pass data between these two sub-systems?
 If I were to extract these two parts into separate programs,
 would it work to communicate over a web API or a message queue?
 And if so, how would they signal error situations to each other?
 
-If it's desirable for those pieces to be loosely coupled,
-then a step towards that is to communicate errors as data between those parts of the program.
+If it's desirable for those parts of the program to be loosely coupled,
+then a step towards that is to communicate errors as data.
 
 NS
 Another practical tradeoff between exceptions and errors-as-data is
@@ -369,12 +361,12 @@ in a similar style to Rust, but TypeScript is meant to integrate directly into J
 NS
 You can see in this Clojure example it's calling Java to try to parse the string to an integer,
 it calls the Java parseInt function to do that,
-and it throws the same Java exception as in the earlier example.
+which it throws the same Java exception as in the earlier example.
 
-So even though Clojure is functional language that puts heavy emphasis on passing data
+So even though Clojure is functional language tha puts heavy emphasis on passing data
 through your program, as a practical matter Java throws exceptions so Clojure has to work with that.
 
-And JavaScript is the same way, even using Typescript you need to deal with exceptions anyway.
+And JavaScript is the same way, even using TypeScript you need to deal with exceptions anyway.
 That may push the decision more in favor of choosing exceptions as the strategy for how to signal errors.
 
 
@@ -383,7 +375,7 @@ Lastly another very good reason to use exceptions is that it's a way
 to make them visible to us. With exceptions, we have infrastructure in place to report them to Bugsnag.
 
 A key challenge for us as developers is that errors are hard to see.
-Hopefully they only happen infrequently, and they often only come out in real-world usage.
+They only happen infrequently, hopefully, and they often only come out in real-world usage.
 So it's easy discount their importance.
 
 Sometimes we'll realize there's a potential for an error, but we dismiss it as an "edge case".
@@ -407,7 +399,8 @@ the edge was like this and it was a disaster.
 But then the next day would arrive and it would become hard to prioritize fixing it.
 
 You really need records of errors in order to prioritize them,
-and pragmatically reporting exceptions to Bugsnag is a way to accomplish that.
+or conversely to understand that they're not a priority,
+Pragmatically, reporting exceptions to Bugsnag is a way to accomplish that.
 
 NS
 For the back half of this talk I want to get into some more Salsify-specific details.
@@ -416,18 +409,19 @@ but the truth is we already do that to some degree in our shared libraries.
 
 Starting out on the backend, here's a snippet from the SalsifyGraphQLServer ruby gem
 which I've shortened to show on the slide.
-For every GraphQL request, the BaseController will catch errors and use our ExceptionReporter gem to send the error to Bugsnag,
-then finally it translates the error into an API response following GraphQL conventions for an error payload.
+For every GraphQL request, the BaseController will catch exceptions and report them to Bugsnag.
+Then it translates the error into an API response following GraphQL conventions for an error payload.
 
 There is more to it than that, in reality it handles more distinct errors, and also reports the error to New Relic.
 (pause to look at code)
 
 NS
 For background jobs, Salsify has an extension to Delayed Job.
-It has a similar approach of catching errors and reporting them to Bugsnag.
+It has a similar approach of catching errors and reporting them to Bugsnag, and that happens at the top level where the job
+is kicked off.
 (pause to look at code)
 
-So if you're using these libraries then you automatically have this basic error handling framework.
+So if you're using these libraries then you automatically have this error handling framework.
 And this is a very helpful default, but by itself it's not enough to attain high quality error handling.
 
 What I've shown so far is backend only. But once we translate the error into an API response payload, then what?
@@ -439,17 +433,18 @@ Making that final step, connecting the dots on the client side, really improves 
 That may be an obvious point but in real world development it's easy for it to fall through the cracks.
 
 NS
-Now just as with the backend libraries, we already do have some built-in default error handing within the main Salsify client app.
+That said, just as with the backend libraries, we already do have some built-in default error handling within the main Salsify client app.
 
 What the frontend error handler service provides is when an Ember route tries to load data from the API,
 but the API request returns an error status like a 404 or 500,
 the client will flash an error message in a bar near the top of the screen.
 It's a bit generic but at least it's providing feedback to the end-user that something went wrong.
 
-But remember those Enhanced Content examples I showed at the beginning where the API returned errors
-but the end user had no signal of that. Why didn't we see that warning bar?
+But remember those Enhanced Content examples I showed at the beginning where the API returned errors.
+The end user had no signal of that in the UI.
 
-Let me show you another real example. This screen comes from the Enhanced Content Ember engine.
+NS
+Then let me show you another real example.
 
 In this video you'll see I'm looking at my list of Enhanced Content layouts.
 Then you'll see I'm going click one of the layout rows and then click the button to copy it.
@@ -562,7 +557,7 @@ So imagine that that "Most Recent Status" component throws an exception, what's 
 
 NS
 Well the overall layout table still renders, but because the status component errored, everything
-after that is gone. You can see there's no status, but also the rows after the first one aren't showing.
+after it is gone. You can see there's no status, but also the rows after the first one aren't showing.
 
 Build Out
 Also, unexpectedly the error thrown by that layout status component also causes
@@ -570,10 +565,10 @@ this Amazon quota bar up at the top to break as well, where now it's not showing
 That's a random side effect of the fact that that the Amazon count is asynchronously fetched,
 and the layout status component errored before it was processed.
 
-So bottom line, again for end-users the behavior when errors happen is puzzling.
+So bottom line, for end-users again the behavior when errors happen is puzzling.
 The page definitely looks off, but there's no direct message that an error occurred.
 
-So more than anything else, we want errors like this reported to Bugsnag so we
+Now more than anything else, we want errors like this reported to Bugsnag so we
 can address it and prevent it from happening in the future. But is there anything more to do to create a higher quality experience?
 
 A heavy-handed approach would be to handle client-side errors like this by fully redirecting to an error page.
@@ -592,7 +587,7 @@ It's at the entrypoints to the program, where an API request comes in, or at the
 These are starting points for some business domain action. They're good seams for communicating errors.
 
 If the backend handles all errors at the boundary of the action,
-then that provides a natural subject to communicate about to the end user.
+it provides a natural subject to communicate about to the end user.
 If it failed, then no matter why it failed,
 whatever deep internal code of the application where the problem occurred,
 as a default we can just say something like "Failed to load your Enhanced Content layout," or
@@ -631,15 +626,11 @@ so by definition we're no longer talking about pure functional programming.
 But I see basically the same idea at play for pushing error handling to the boundaries.
 Then in the core of our programs we don't mess around with error handling at all.
 
-This approach is different than a lot of the code I've read and code I've written myself in real-life,
+This approach is different than a lot of the code I've read and I've written myself in real-life,
 which has error handling logic strewn throughout the codebase.
 
-And granted, one reason for that is sometimes we have to deal with functions that throw exceptions
-for cases that aren't really exceptional, where really it would be better
-if you just got some domain-specific return value but instead you have to catch an exception.
-
-But the other big reason why real-world code often has error handling all over the place comes back to
-the common situation that a project doesn't have a clear overall error design.
+And I think the biggest reason why real-world code often has error handling all over the place comes back to
+this common issue that projects don't really have a clear overall error design.
 
 But if we create confidence that the app will deal with exceptions adequately at the boundaries,
 then we mostly wouldn't need to throw in ad hoc handling at lower levels.
@@ -665,9 +656,7 @@ Build Out 4
 And third there are unexpected problems, like logical bugs in our code, or running out of memory.
 We do know that errors like this will happen, but we don't know exactly where ahead of time.
 
-And it's worth noting that a given error can move across these categories over time.
-
-Ultimately the crux of this talk is about those second two types, which are outside our prgoram domain.
+Ultimately the crux of this talk is about those second two types, which are outside our program domain.
 
 Build Out 5
 The key insight is that we our only real recourse for these is communication.
@@ -683,9 +672,8 @@ It's easy to preach best practices in a tech talk but day-to-day when we're focu
 it's hard to grow the scope of any given Jira ticket in order to sort out error handling.
 But this handle-at-the-boundary approach is a way to make this stuff more actionable, because it can just be part of a checklist
 for each new API request and each new background job.
-Then in the bulk of our programs we can ignore errors because we're confident that when they happen,
-we will catch them at the boundary and adequately communicate to users, as well as giving ourselves enough information to make any necessary updates. So that strategy raises the quality level
-while also simplifying week-to-week feature development.
+Then in the bulk of our programs we can literally ignore errors because we're confident that when they happen,
+we will catch them at the boundary, and we know that we'll adequately communicate to users and give ourselves enough info to make any necessary updates. So that design actually simplifies feature development overall while also raising the quality level.
 
 OK that's it, thank you very much, and I'm happy to take any questions or comments.
 
