@@ -665,15 +665,25 @@ Devising the approach takes collaboration between engineering, product, and UX.
 But taking that extra step makes a huge difference in quality.
 
 Build Out 6
-And finally, a helpful design framework is to build error handling into the boundaries of our programs. We already have some of that in our shared libraries but in an individual application
-we need to go a little farther to make it work end-to-end.
+And finally, a helpful design framework is to build error handling into the boundaries of our programs.
+We already have some of that in our shared libraries but in an individual application,
+we need to go a little farther to make it all work end-to-end.
 
-It's easy to preach best practices in a tech talk but day-to-day when we're focused on feature development
+Granted it's easy for me to toss out these ideas in a tech talk, but day-to-day when we're focused on feature development
 it's hard to grow the scope of any given Jira ticket in order to sort out error handling.
-But this handle-at-the-boundary approach is a way to make this stuff more actionable, because it can just be part of a checklist
-for each new API request and each new background job.
-Then in the bulk of our programs we can literally ignore errors because we're confident that when they happen,
-we will catch them at the boundary, and we know that we'll adequately communicate to users and give ourselves enough info to make any necessary updates. So that design actually simplifies feature development overall while also raising the quality level.
+
+But the origin of the talk was I was reflecting on how handling errors is this fundamental issue
+in software development, and it makes a real difference in quality,
+so I feel like it really ought to have a more well-paved path than it seems to in real applications.
+
+And I think the handle-at-the-boundary approach is a solid way to make these ideas more actionable.
+Because it naturally implies a checklist, where each time we add say a new API request, or a new background job,
+that's the point to ask, for this new entry point, how do we communicate errors to end-users and record them for our own prioritization.
+
+And a great side-effect of that technique is then throughout the bulk of the program we can mostly ignore errors.
+Because when an error happens, we know we'll handle it at the boundary,
+and we know that we'll adequately communicate to users and we'll have the data to prioritize addressing it.
+So that design simplifies feature development overall while also raising the quality level.
 
 OK that's it, thank you very much, and I'm happy to take any questions or comments.
 
