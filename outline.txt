@@ -582,108 +582,91 @@ so being loud and clear seems OK.
 NS
 
 I want to go back to the server-side for a moment and discuss
-the tactic that SalsifyGraphQL and DelayedJob extensions take, where they handle errors at the edges.
-It's at the entrypoints to the program, where an API request comes in, or at the top-level of executing a background job.
-These are starting points for some business domain action. They're good seams for communicating errors.
+the tactic that our DelayedJob extension takes, where it handle errors at the edges.
+It's at the entrypoint to the program, at the top-level of executing a background job.
+That's a starting points for some business domain action. That makes it a good seam for communicating errors.
 
 If the backend handles all errors at the boundary of the action,
 it provides a natural subject to communicate about to the end user.
 If it failed, then no matter why it failed,
 whatever deep internal code of the application where the problem occurred,
-as a default we can just say something like "Failed to load your Enhanced Content layout," or
+as a default communication strategy we can just say reference the top-level domain action that prompted the error.
+
+Like if we're executing a background job that publishes Enhanced Content, then at the entry point to that job
+we know that context, so the simple strategy is to handle all errors there and just say
 "This attempt to publish your content failed."
 
-But it's a little more complicated on the client side because we have so many entry points.
-Every attribute in every nested component and every component action are independent entry points that can error.
-
-So one hand I do think it's possible to pursue same pattern on the client side, where we handle errors
-individually at all of those entry points, but it's a lot of effort.
-So we could zoom out to those those top-level browser events for unhandled errors. They are a much coarser grained,
-but it's a good default. It's a good way to create a backstop so we have a baseline communication in place
-for errors, and then put most of our effort into preventing the errors from re-occurring.
+That strategy also works nicely for REST APIs because each URL is an entry point for a domain action.
+So the web controller can simply say something like "Failed to save your Enhanced Content layout."
 
 NS
-OK to make quick detour. There's a great talk by Gary Bernhardt called Boundaries, where he
-talks about a couple common problems that arise in automated test suites.
-One problem is that often the tests are slow, for example because we're reading and writing to the database a lot,
-or spinning up a web browser to verify the rendered UI. But then the common solution to that is to use test-mocks, and that creates its own set of problems. Even though mocking can help the tests go faster, over-using them leads to brittle tests that
-essentially just repeat the implementation, rather than actually verifying the intended behavior.
-
-And so the solution he articulates is what he calls Functional Core, Imperative Shell. The idea is
-that you write most of your code in a functional style, where you're just passing data to functions
-and getting data back. Most of your code is restricted to domain logic.
-
-And only at the edges of the program do you deal with the messy,
-side-effecty things like the database, external APIs, and rendering.
-And then for your tests, for the majority of code, you won't even need to bother with mocks,
-you can safely execute the production code,
-and mostly it will go fast since you're not doing any side-effects.
-
-Well we can apply a variation on this idea for thrown exceptions.
-Now I admit I'm stretching the metaphor because exceptions are a side effect themselves,
-so by definition we're no longer talking about pure functional programming.
-
-But I see basically the same idea at play for pushing error handling to the boundaries.
-Then in the core of our programs we don't mess around with error handling at all.
-
-This approach is different than a lot of the code I've read and I've written myself in real-life,
-which has error handling logic strewn throughout the codebase.
-
-And I think the biggest reason why real-world code often has error handling all over the place comes back to
-this common issue that projects don't really have a clear overall error design.
-
-But if we create confidence that the app will deal with exceptions adequately at the boundaries,
-then we mostly wouldn't need to throw in ad hoc handling at lower levels.
-
-So to wrap up:
-NS
+But notice it doesn't quite work that neatly for GraphQL because we don't have server-defined
+seams like that, since the GraphQL endpoint is processing arbitrary queries.
 
 Build Out 1
-Historically, the way that programming languages signal errors blurs together different issues.
+See in this example the server will blow up while it's trying to resolve the query.
 
 Build Out 2
-There are problems that we expect and they're actually just an infrequent but normal situation in our domain,
-and we can write code to deal with that situation. At that point from our program's point of view
-it's no longer really an error, it's just another case that this program covers.
+And thanks to SalsifyGraphQLServer's BaseController, we'll package this into a GraphQL errors response.
+But the returned error message will more suited to developers than to end users.
+We don't have an obvious subject to communicate about.
 
-Build Out 3
-Then there are problems where we know in advance that they will happen, but we decide that do not want to expand our
-program's domain to cover them. Again a common example of that is when our backend services
-make HTTP requests to each other, and we know we will get responses with error status codes sometimes. There isn't a nice way to integrate that into our program's domain model,
-so we call it an exception and bail out.
+NS
+So one way to confront that is to view each field as an entry point.
 
-Build Out 4
-And third there are unexpected problems, like logical bugs in our code, or running out of memory.
-We do know that errors like this will happen, but we don't know exactly where ahead of time.
+Build Out 1
+In this version I'm rescuing errors for the field-level resolver and turning it into a user-oriented error message.
 
-Ultimately the crux of this talk is about those second two types, which are outside our program domain.
+Build Out 2
+And then the response provides a message that the client could display.
+But you can see that adding error handlers at this level add a ton of extra code.
+It is a valid approach, it's just a lot.
 
-Build Out 5
-The key insight is that we our only real recourse for these is communication.
-That's challenging to pull off because it's not totally clear who is responsible.
-Devising the approach takes collaboration between engineering, product, and UX.
-But taking that extra step makes a huge difference in quality.
+So for GraphQL requests I'd want re-frame the understanding of what the entrypoint is, and say it's actually
+the client side request. The client will have context on the domain action it's doing when it submits that
+GraphQL query, so if the server errors, the client can just display a message referencing that domain action.
 
-Build Out 6
-And finally, a helpful design framework is to build error handling into the boundaries of our programs.
-We already have some of that in our shared libraries but in an individual application,
-we need to go a little farther to make it all work end-to-end.
+OK, so for errors on the client side itself we have a similar issue because there are so many entry points.
+Every attribute in every nested component and every component action are independent entry points that can error.
 
-Granted it's easy for me to toss out these ideas in a tech talk, but day-to-day when we're focused on feature development
-it's hard to grow the scope of any given Jira ticket in order to sort out error handling.
+And it's possible to pursue that pattern on the client side, where we handle errors
+individually at all of those entry points, but again it's a lot of effort.
+And again, I'd suggest re-defining the entrypoint, and zoom out to those those built-in browser events for unhandled errors.
+That's a good way to create a backstop to ensure we have communication in place for any error,
+instead of catching exceptions on every single component attribute.
 
-But the origin of the talk was I was reflecting on how handling errors is this fundamental issue
-in software development, and it makes a real difference in quality,
-so I feel like it really ought to have a more well-paved path than it seems to in real applications.
+NS
+Because the fundamental idea here is that when a runtime exception happens,
+to achieve a good quality user experience we need to communicate it,
+but moreover, communicating it is usually the only reliable thing we can do.
 
-And I think the handle-at-the-boundary approach is a solid way to make these ideas more actionable.
-Because it naturally implies a checklist, where each time we add say a new API request, or a new background job,
-that's the point to ask, for this new entry point, how do we communicate errors to end-users and record them for our own prioritization.
+I see this as a key insight, because historically most programming languages signal errors in a way
+that blurs together different kinds of issues, so it's too easy to lose track of this point,
+that either the program knows in advance how to deal with this issue as part of the its domain,
+or it doesn't, so its only recourse is to report the issue to humans.
 
-And a great side-effect of that technique is then throughout the bulk of the program we can mostly ignore errors.
-Because when an error happens, we know we'll handle it at the boundary,
-and we know that we'll adequately communicate to users and we'll have the data to prioritize addressing it.
-So that design simplifies feature development overall while also raising the quality level.
+That drives this design of pushing error handling to the boundaries.
+Because if we understand exceptions this way, then most of the time
+there's no point messing around with error handling at all in the core of our programs.
 
-OK that's it, thank you very much, and I'm happy to take any questions or comments.
+But this approach is different than a lot of the code I've both read and written myself in the past,
+where error handling logic is strewn throughout the codebase.
+
+The antidote to that is to deal with exceptions adequately at the boundaries.
+Because then we can have the confidence to not have error handling code at lower levels.
+
+Establishing a solid pattern for communicating the problem makes a huge difference in quality.
+Partly because it reduces confusion for end users and instills more confidence in the software,
+and also because the increased visibility makes it more likely that
+we'll get around to addressing the underlying bugs.
+
+I want to admit that it's challenging to implement these practices,
+but I think the handle-at-the-boundary approach is a good mental framework to make it more actionable.
+Because it naturally implies a checklist, where each time we add a new feature,
+that's the point to ask, what is the entry point here,
+and how will it communicate errors to end-users?
+
+Ultimately that simplifies development overall, and creates a much better user experience.
+
+OK that's it, thank you, and I'm happy to take any questions or comments.
 
