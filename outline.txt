@@ -171,16 +171,22 @@ The C language emerged in 1972 and it influenced a lot of what happened later.
 NS
 In C error handling conventionally happened via return values.
 
-In this example C program we're making a system call to open a file, and that returns a file pointer.
-Then we're trying to write to the file using that file pointer.
-Build Out
+In this example C program we're making a system call to open a file.
+
+Build Out 1
+Opening the file returns a file pointer, and then we're trying to write to the open file using that file pointer.
+
+Build Out 2
 But the file doesn't exist. Writing to that non-existent file results in a segfault
 and the program is killed by the operating system.
 
 NS
 So in the next slide I've fixed that bug.
+
+Build Out 1
 Now I have logic to only write to the file if the returned file pointer is not NULL.
-Build Out
+
+Build Out 2
 The program continues without crashing.
 
 This works. But there are two problems. First, it's mashing the error signaling into the return value.
@@ -223,7 +229,14 @@ Exceptions forcibly re-route the code execution.
 
 NS
 But even though that's helpful it has a dark side.
-It introduces implicit control flow, sort of like a GOTO statement, where they make code abruptly jump.
+Exceptions introduce implicit control flow, sort of like a GOTO statement, where they make code abruptly jump.
+
+Because we don't always have such a compact try/catch or begin/rescue
+where you can see everything at a glance.
+More likely you have a deep call stack, like here we have function a who calls be who calls c,
+and in realistic programs, the stack often spans multiple files.
+So the error handling code may live far away from whatever throws the exception.
+
 This can make program logic hard to reason about, because when you are reading the exception handling code,
 it's not always obvious what the context is. How did we get here? What are all the circumstances where
 we'd be running this handler code and what details do we need to clean up?
@@ -236,17 +249,20 @@ It's too common to use them for control flow, and it becomes difficult to handle
 NS
 In fact some people view these problems with Exceptions as unacceptable.
 
-Recent languages that have become mainstream decided not to have exceptions at all.
+Build Out
+A couple recent languages that have become mainstream decided not to have exceptions at all.
 They went back to communicating errors with return values, like C, just with some twists.
 
 NS
 In Go, the big change compared to C is that functions return two distinct values,
 with the error value in the second position,
 so return values and errors are not overloaded.
+(pause)
 And ergonomically this is much better. But you are still free to ignore the error value.
 
 NS
 In Rust, they moved the problem into the type system.
+(pause)
 The standard approach for functions that can fail is to wrap the return value in a Result type.
 A Result data type has two variants, Ok or Err,
 and the Rust type checker forces you to cover those possibilities.
@@ -440,11 +456,8 @@ but the API request returns an error status like a 404 or 500,
 the client will flash an error message in a bar near the top of the screen.
 It's a bit generic but at least it's providing feedback to the end-user that something went wrong.
 
-But remember those Enhanced Content examples I showed at the beginning where the API returned errors.
-The end user had no signal of that in the UI.
-
 NS
-Then let me show you another real example.
+But let me show you another real example.
 
 In this video you'll see I'm looking at my list of Enhanced Content layouts.
 Then you'll see I'm going click one of the layout rows and then click the button to copy it.
@@ -454,11 +467,15 @@ Let's watch...
 
 So click, copy, nothing happens, no feedback.
 
+And also remember those Enhanced Content examples I showed at the beginning where the API returned errors,
+but the end user had no signal of that in the UI.
+
 So, in theory Salsify has this standard UI feedback for failed API requests,
 but in practice it's not always working.
 
-Now the reason this isn't working here is bit tricky.
-The problem is that the scope for the error message is set to the copy modal, but that modal isn't visible when the error occurs.
+Now in that video, the reason doesn't work is bit tricky.
+The problem is that the scope for the error message is set to the copy modal,
+but that modal isn't visible when the error occurs.
 That's why you don't see the flash message.
 
 On one hand you could blame the EC engine for this, because it has an error in its error handler.
