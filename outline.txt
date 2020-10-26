@@ -66,16 +66,16 @@ This talk is a deep dive on that last aspect of quality, error handling.
 Handling errors in software is hardly a new topic,
 it's more like a plain old day-to-day software engineering concern,
 and I expect that people will already be at least somewhat familiar with the ideas I'll cover here.
-But I also believe that it's a deceptive topic, because despite its ordinariness it's still an unsolved problem in practice.
+But I also believe that it's a deceptive topic, because despite its ordinariness it's not entirely solved in practice.
 
-I wanted to do a tech talk on it because something I've noticed across my software engineering life
-is that it's standard to relegate error handling to a problem we deal with case-by-case when we have to,
+Something I've noticed across my software engineering life
+is that it's standard to treat error handling to this thing we deal with case-by-case when we have to,
 and basically invent ad-hoc solutions. But as a result it's always a little messy.
-That means though that being a little more deliberate with error handling is an actionable technique
-for producing higher quality software.
 
-So even though this talk is reviewing some fundamental ideas,
-I hope you'll find it interesting and practical to see this material presented all together.
+The overall thesis of this talk is that being slightly more deliberate with error handling
+is an actionable technique for producing higher quality software.
+
+I hope you'll find it thought-provoking and practical.
 
 
 NS
@@ -258,7 +258,7 @@ In Go, the big change compared to C is that functions return two distinct values
 with the error value in the second position,
 so return values and errors are not overloaded.
 (pause)
-And ergonomically this is much better. But you are still free to ignore the error value.
+And this gets rid of the control flow jumps. But now you are free to ignore the error value again.
 
 NS
 In Rust, they moved the problem into the type system.
@@ -625,31 +625,37 @@ See in this example the server will blow up while it's trying to resolve the que
 
 Build Out 2
 And thanks to SalsifyGraphQLServer's BaseController, we'll package this into a GraphQL errors response.
-But the returned error message will more suited to developers than to end users.
-We don't have an obvious subject to communicate about.
+In production it will automatically set the returned message to "Internal server error".
+But either way it's not communicating about specific domain action that prompted the error.
 
 NS
-So one way to confront that is to view each field as an entry point.
+So one way to try to confront that is to view each GraphQL field as an entry point.
 
 Build Out 1
 In this version I'm rescuing errors for the field-level resolver and turning it into a user-oriented error message.
 
 Build Out 2
 And then the response provides a message that the client could display.
-But you can see that adding error handlers at this level add a ton of extra code.
-It is a valid approach, it's just a lot.
+But you can see that adding error handlers at this level would add a ton of extra code.
+Plus, the error messages we could set on individual fields still wouldn't be communicating about
+the overall domain action that failed.
 
 So for GraphQL requests I'd want re-frame the understanding of what the entrypoint is, and say it's actually
 the client side request. The client will have context on the domain action it's doing when it submits that
-GraphQL query, so if the server errors, the client can just display a message referencing that domain action.
+GraphQL query, so if the server errors, the client can display a message referencing that domain action.
+And then if the client wants to add in the message field returned by the server to provide more detail, sure.
+But the key point is we've defined the entry point in a way supports a reasonable communication to the user.
 
-OK, so for errors on the client side itself we have a similar issue because there are so many entry points.
-Every attribute in every nested component and every component action are independent entry points that can error.
+OK. So then for errors on the client side itself we have a similar challenge
+because the client application has so many entry points.
+Every attribute in every nested component and every component action
+are independent entry points that can error.
 
-And it's possible to pursue that pattern on the client side, where we handle errors
-individually at all of those entry points, but again it's a lot of effort.
-And again, I'd suggest re-defining the entrypoint, and zoom out to those those built-in browser events for unhandled errors.
-That's a good way to create a backstop to ensure we have communication in place for any error,
+Catching exceptions individually at all of those entry points would be a lot of effort and
+still wouldn't hit the right level of detail to communicate to end users.
+
+And again, I'd suggest re-defining the entrypoint, and zoom out to those built-in browser events for unhandled errors.
+They are a good way to create a backstop to ensure we have communication in place for any error,
 instead of catching exceptions on every single component attribute.
 
 NS
@@ -668,9 +674,16 @@ there's no point messing around with error handling at all in the core of our pr
 
 But this approach is different than a lot of the code I've both read and written myself in the past,
 where error handling logic is strewn throughout the codebase.
+You see some try-catches on some functions but not all,
+some modules have custom Error classes defined but not all,
+some of the files have rolled their own version of a Result type.
+And those tactics may all make sense in their local context
+but they don't go all the way to providing a good experience for end users.
 
-The antidote to that is to deal with exceptions adequately at the boundaries.
-Because then we can have the confidence to not have error handling code at lower levels.
+The antidote to that is to make sure we deal with exceptions adequately at the boundaries.
+Because then we can have the confidence to not put error handling code at lower levels at all.
+Just communicate that it happened, look at Bugsnag, and when it makes sense,
+adjust the code to prevent that error condition in the future.
 
 Establishing a solid pattern for communicating the problem makes a huge difference in quality.
 Partly because it reduces confusion for end users and instills more confidence in the software,
