@@ -26,57 +26,57 @@ Build Out 1
 * First, does the software provide a nice user interface?
     Does it look good, is it intuitive, does it make it easy to do what you need to do?
 * Another trait is performance. If it's responsive and fast then it's higher quality.
-* Next, correctness. I like to describe this as if you add 2 + 2 you want to get 4.
-    And I would admit, yes in the real-world we don't *always* have a single clear definition
-    of the correct behavior.
-    Still, one of the hallmarks of good quality software is that it's gone to the trouble of sorting out
-    a definition of correctness for complicated situations.
+* Next, does the software do things correctly?
+    This one is context dependent, like say you build a weather forecasting program and you
+    use floating point numbers, you'll have rounding errors but it can still be
+    reasonably correct by the expectations of that program. Vs. if you build
+    a payments app using floats it will bother people.
+    A hallmark of good quality software is that it's gone to the trouble of
+    sorting out appropriate definitions of correctness for its situation, and implemented them.
 * And a final quality trait, does the software handle errors gracefully?
-    Notice that error handling is a slightly different issue than correctness.
-    Partly because even if your code is perfectly correct, some errors will happen outside of it,
-    like say a network error. But even in cases when an error happens
-    because your code is logically incorrect, the software overall may still handle that error well,
+    Programs encounter errors for external reasons like network issues or unexpected user input,
+    and sometimes they have plain old bugs in their internal logic. It happens.
+    But the software may still handle that error well,
     and that makes a real difference in the user's experience.
 
-
 Build Out 2
-One reason I like this definition is that it mostly isolates quality traits
-from domain-specific features.
-There is some overlap, like you'll hear people say that performance is a feature,
-and I truly see that point, but still that's
-different from what we usually understand as domain features.
+One reason I like this definition is that it helps isolate
+the meaning of quality from the software's features.
+Surely there is some overlap, like sometimes you'll hear people say that performance is a feature,
+and I truly understand that point,
+but it's different from what we usually understand as domain features.
 
 Also, this helps shed light on why software quality is challenging to attain,
 because it is domain features that our business stakeholders usually request from us.
 Features are the front line of making sales.
 We have PMs and eng management putting a lot of coordinated effort into planning out feature development.
 Whereas pulling off quality requires a lot of initiative from individual engineers.
-To their credit, eng management has sponsored various projects here that help drive quality,
-but it's still fair to say that quality is more of a grassroots effort than our feature roadmap.
+To their credit, eng management here has sponsored multiple projects that help drive quality,
+but it's still quality tends to be more of a grassroots effort than our feature roadmap.
 
-Although I noticed an interesting point
-in Jason's presentation about our Series E funding, that the investor research had shown that
-customers viewed Salsify as a good quality solution that they were more likely to recommend.
-That made the investment more attractive. So quality does translate into real money over time.
-
-Anyway, all of that was to give you the background ideas behind this talk,
-because the rest of it is lower level.
-This talk is a deep dive on that last aspect of quality, error handling.
+And this talk is meant to be a small example of that.
+It's a survey of that last aspect of quality, error handling.
 
 Handling errors in software is hardly a new topic,
-it's more like a plain old day-to-day software engineering concern,
-and I expect that people will already be at least somewhat familiar with the ideas I'll cover here.
-But I also believe that it's a deceptive topic, because despite its ordinariness it's not entirely solved in practice.
+it's more like a plain old day-to-day software engineering concern.
+But I also believe that it's a deceptive topic, because despite its ordinariness it's not solved in practice.
 
-Something I've noticed across my software engineering life
-is that it's standard to treat error handling to this thing we deal with case-by-case when we have to,
-and basically invent ad-hoc solutions. But as a result it's always a little messy.
+One of the ongoing challenges we have in software development is to keep it simple, just solve today's problem,
+because we know, so often, over-engineering leads to complexity and maintainability problems.
 
-The overall thesis of this talk is that being slightly more deliberate with error handling
-is an actionable technique for producing higher quality software.
+Something I've noticed across my software engineering life though
+is that the status quo for error handling is under-engineering.
+It's something I've dealt with case-by-case when necessary, and I basically invent ad-hoc solutions.
+Understandably it ends up a little messy and inconsistent.
 
-I hope you'll find it thought-provoking and practical.
+But I think it's practically the definition of a low-hanging fruit,
+where being slightly more deliberate with error handling
+is a direct way to produce higher quality software.
 
+So the aim of this talk is to get into the details of:
+* What are the actual goals when it comes to handling errors in software?
+* What tools do we have available and what are their tradeoffs?
+* And what is a solid overall strategy to apply in the applications we're building?
 
 NS
 OK then. Here is the Enhanced Content UI in Salsify.
