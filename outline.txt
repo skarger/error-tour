@@ -527,10 +527,10 @@ but for actually communicating background job failures to end users,
 that's an example where the status quo is to figure it out ad hoc.
 Usually, each time we add a new background job, the approach for handling failures isn't covered.
 Then over time we see failures in production and it's like OK now we need to devise some UX to handle this case.
-And we're starting out with basic questions like, what even screen do we display the error on?
+And we're starting out with basic questions like, what screen do we even display the error on?
 
 So one actionable takeaway here is every time we add a new background job, consider how to communicate when it fails, and then verify that it works.
-Similarly, for any API request the client makes, a good baseline for failures is verify that it flashes an error message bar in the style of the main dandelion client.
+Similarly, for any new API request the client makes, a good baseline is to verify that failures will flash an error message in the style of the main dandelion client.
 
 NS
 Beyond server errors, I want to cover errors in the client itself,
@@ -708,13 +708,13 @@ That drives this design of pushing error handling to the boundaries.
 Because if we understand exceptions this way, then there's absolutely no point messing around
 with error handling at all in lower-levels of our programs.
 
-This approach is different than a lot of the code that I've both read and written myself,
+This approach is different than a lot of real-word code, including what I've written myself,
 where error handling logic is strewn throughout the codebase.
 You'll see some try-catches on some functions but not all,
 some modules have defined a custom Exception class, others just throw built-in Exceptions,
-sometimes a function will just return null or some other error value that it expects the caller to check.
+sometimes a function will just return null or some other error data that it expects the caller to check.
 
-But none of these techniques provide much value for providing a good overall experience for end users.
+But none of these techniques provide much value for creating a good overall user experience.
 
 The solution is to make sure we deal with exceptions adequately at the boundaries.
 Because then we can have the confidence to not bother with error handling code at lower levels at all.
@@ -722,11 +722,10 @@ Literally, be optimistic, only write code that assumes everything is going to wo
 And when an exception is thrown just handle it at the boundary
 by telling the user that it happened, and report it to Bugsnag.
 
-There's only one exception to that, no pun intended,
-when we're calling a function that we know might throw
+Now once in awhile we will be calling a function and we know it can throw an exception
 but our program has a clear way to recover and keep going.
-Then it make sense to wrap a handler around that one call.
-Situations like that are pretty rare though, and it's fine to let them emerge from production usage.
+So in that case I'd say sure, it make sense to wrap a handler around that one call.
+Situations like that are pretty rare though, and it's fine to let them emerge in production use.
 
 This handle-at-the-boundary approach is a good mental framework,
 because it naturally implies a checklist, where each time we add a business feature,
