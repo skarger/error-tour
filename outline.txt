@@ -3,7 +3,7 @@ Hi everyone, I'm Stephen Karger. Thank you for attending.
 So this material will range about 45 minutes,
 so there will be a little time at the end if people want to stick around for questions or comments.
 
-So let's get started.
+So let's get into it.
 
 OK, before I get into the specific topic this talk is all about
 I want start out with a bigger question.
@@ -13,11 +13,8 @@ When it comes to software, what is quality?
 
 What does it actually mean for software to be high quality?
 
-If you think you've built quality software in the past, what did you do?
-What details made it quality?
-
-So I've come up with an answer that I like,
-which is that quality software has the following traits:
+So I thought about this myself, and here's my answer.
+Quality software has the following traits:
 
 Build Out 1
 
@@ -26,15 +23,15 @@ Build Out 1
 * Another trait is performance. If it's responsive and fast then it's higher quality.
 * Next, does the software do things correctly?
     This one is context dependent, like say you build a weather forecasting program and you
-    use floating point numbers, you'll have rounding errors but it can still be
+    use floating point numbers, you will have rounding errors but it can still be
     reasonably correct by the expectations of the program. Vs. if you build
-    a payments app with floating point then it will be incorrect in a way that bothers people.
+    a payments app with floating point then it will be incorrect in a way that matters.
     A hallmark of good quality software is that it's gone to the trouble of
     sorting out appropriate definitions of correctness for its situation, and implemented them.
 * And a final quality trait, does the software handle errors gracefully?
-    Programs encounter errors for external reasons like network issues or unexpected user input,
-    and sometimes they have plain old bugs in their internal logic. It happens.
-    Either way the software may still handle that error well,
+    Our programs encounter errors for external reasons like network failures, or unexpected user input,
+    but also internal bugs like trying to use a null value that you expect to be non-null.
+    When errors happen, though, the software may still handle it well,
     and that makes a real difference in the user's experience.
 
 Build Out 2
@@ -45,34 +42,43 @@ and I truly understand that point,
 but it's different from what we usually understand as domain features.
 
 Also, this helps shed light on why software quality is challenging to attain,
-because it is domain features that our business stakeholders usually request from us.
+because it is domain features that our business stakeholders request from us.
 Features are the front line of making sales.
 We have PMs and eng management putting a lot of coordinated effort into planning out feature development.
-Whereas pulling off quality requires a lot of initiative from individual engineers.
-Certainly management here has been willing to sponsor multiple projects that help drive quality,
-but it's still something that tends to be more of a grassroots effort than our feature roadmap.
+I'd certainly say our management is friendly to quality efforts,
+but the concrete actions happen by individual engineers taking initiative.
 
 And this talk itself is a small example of trying to level-up on quality.
-It's a deep dive on that last trait of error handling.
+It's going to do a deep dive on that final quality trait, of error handling.
 
 Handling errors in software is hardly a new topic,
 it's more like a plain old day-to-day software engineering concern.
 But I also believe that it's a deceptive topic, because despite its ordinariness it's not solved in practice.
-
+<pause>
 One of the ongoing challenges we have in software development is to keep it simple, just solve today's problem,
 because so often, over-engineering leads to complexity and maintainability problems.
 
-However something I've noticed is that the status quo for handling errors is under-engineering.
-Across my software engineering life it's been something we deal with case-by-case, in an ad-hoc and incomplete way.
+Well as an industry we've done an excellent job of taking that advice when it comes to error handling.
+The status quo there is actually under-engineering.
+It's been something where the default is to deal with it case-by-case, in an inconsistent and incomplete way.
 
 But I think it's practically the definition of a low-hanging fruit,
 where being slightly more deliberate with error handling
 is a direct way to produce higher quality software.
 
-So the aim of this talk is to get into these details:
-* What are the actual goals when it comes to handling errors in software?
-* What tools do we have available and what are their tradeoffs?
-* And what is a solid overall strategy to apply in the applications we are building?
+And that's the origin of this talk. Earlier this year I was working on a random Jira ticket
+and I realized there were some potential errors, so I was writing some ad-hoc error handling code,
+and I said I've been here before.
+I didn't want to spend time writing custom code for that situation,
+but the only short-term alternative would have been to leave the code in a state
+where the errors would have resulted in a poor user experience.
+
+So the challenge I set was OK, you think this should be more of a solved problem, then what's the solution?
+
+The aim of this talk is to take on that question, and it will do that by covering a few details:
+* What are the actual goals when it comes to handling software errors?
+* Second, what tools do we have available and what are their tradeoffs?
+* And then what is an overall strategy that keeps things simple but manages to provide a quality user experience?
 
 NS
 OK then. Here is the Enhanced Content UI in Salsify.
