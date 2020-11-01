@@ -82,6 +82,7 @@ The aim of this talk is to take on that question, and it will do that by coverin
 
 NS
 OK then. We're looking at the Enhanced Content builder UI in Salsify.
+In this presentation I'm going to pick on Enhanced Content a lot.
 I've opened this publish dropdown in the top-right and it's working as intended,
 showing me a collection of retailers where I can send my Enhanced Content.
 
@@ -498,16 +499,12 @@ but the end user had no signal in the UI.
 So, in theory Salsify has this built-in feedback in the UI for failed API requests,
 but in practice it's not always working.
 
-The reasons why doesn't work is bit tricky.
-The problem is that the scope for the error message is set to the copy modal,
-but that modal isn't visible when the error occurs.
-That's why you don't see the flash message.
-
-On one hand you could blame the EC engine for this, because it has an error in its error handler.
-But when we're working on an Ember engine like this, in a normal development workflow we can't see that error behavior,
+In those specific examples there are a couple different reasons why it didn't work
+that come out of low-level details in the Enhanced Content engine.
+So you could blame the EC engine for this.
+But when we're working on an Ember engine like this, in a normal development workflow we can't see that behavior,
 because it's provided by the main app in dandelion. The only way to see it is to package the engine into dandelion
 and test end-to-end, including forcing the backend API server to return a 500.
-The fact is that problem has existed for awhile but I only discovered it because I was preparing this tech talk.
 
 Also with our current setup, it's difficult to write an automated test
 in the Enhanced Content engine that realistically exercises the UI behavior for a failed API request,
@@ -522,8 +519,8 @@ behavior where if an API request fails, let's at least provide some visual feedb
 Because it ultimately doesn't matter whether the server indicates errors in a well-formatted way,
 if we don't carry that through end-to-end so that the client communicates the problem to the user.
 
-By the way in this example I focused on synchronous web requests but communication of background job failures
-might be even more important for a lot of Salsify features.
+In these examples I focused on synchronous web requests,
+but communication of background job failures might be even more important for a lot of Salsify features.
 
 As I showed before we have the backend error reporting extension for DelayedJob,
 but for actually communicating background job failures to end users,
