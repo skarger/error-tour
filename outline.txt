@@ -43,45 +43,45 @@ but it's different from what we usually understand as domain features.
 
 Also, this helps shed light on why software quality is challenging to attain,
 because it is domain features that our business stakeholders request from us.
-Features are the front line of making sales.
-We have PMs and eng management putting a lot of coordinated effort into planning out feature development.
-I'd certainly say our management is friendly to quality efforts,
-but the concrete actions happen by individual engineers taking initiative.
+Features are the front line of making sales, and we have a lot of people around the
+business putting coordinated effort into defining the feature roadmap and executing it.
+For quality it's more of an informal requirement,
+and we rely on various engineering-driven efforts to pull it off.
 
 And this talk itself is a small example of trying to level-up on quality.
 It's going to do a deep dive on that final quality trait, of error handling.
 
 Handling errors in software is hardly a new topic,
-it's more like a plain old day-to-day software engineering concern.
+it's more like an ordinary day-to-day concern in software engineering.
 But I also believe that it's a deceptive topic, because despite its ordinariness it's not solved in practice.
 <pause>
-One of the ongoing challenges we have in software development is to keep it simple, just solve today's problem,
-because so often, over-engineering leads to complexity and maintainability problems.
+An ongoing challenges we have in software development is to keep it simple and just solve today's problem.
+That's a response to a very common reality where over-engineering leads to complexity and maintainability problems.
 
-Well as an industry we've done an excellent job of taking that advice when it comes to error handling.
-The status quo there is actually under-engineering.
-It's been something where the default is to deal with it case-by-case, in an inconsistent and incomplete way.
+Well as an industry we've done an excellent job of not over-engineering when it comes to error handling.
+The default approach there is to not really design it at all,
+and deal with it case-by-case, likely in an inconsistent and incomplete way.
 
 But I think it's practically the definition of a low-hanging fruit,
 where being slightly more deliberate with error handling
 is a direct way to produce higher quality software.
 
 And that's the origin of this talk. Earlier this year I was working on a random Jira ticket
-and I realized there were some potential errors, so I was writing some ad-hoc error handling code,
-and I said I've been here before.
-I didn't want to spend time writing custom code for that situation,
-but the only short-term alternative would have been to leave the code in a state
-where the errors would have resulted in a poor user experience.
+and during development I realized there were some potential errors,
+so I was writing some ad-hoc code to handle that, and I said I've been here before.
+I didn't want to spend time writing custom code,
+but the only alternative in the scope of my ticket would have been to leave the code in a state
+where these errors would have created a very broken user experience.
 
-So the challenge I set was OK, you think this should be more of a solved problem, then what's the solution?
+So I said, I believe this should be more of a solved problem, but what is the solution?
 
 The aim of this talk is to take on that question, and it will do that by covering a few details:
-* What are the actual goals when it comes to handling software errors?
-* Second, what tools do we have available and what are their tradeoffs?
-* And then what is an overall strategy that keeps things simple but manages to provide a quality user experience?
+* First, what are the actual goals when it comes to handling errors?
+* Then what tools do we have available and what are their tradeoffs?
+* And what is an overall strategy that strives to keep things simple but manages to provide a quality user experience?
 
 NS
-OK then. Here is the Enhanced Content UI in Salsify.
+OK then. We're looking at the Enhanced Content builder UI in Salsify.
 I've opened this publish dropdown in the top-right and it's working as intended,
 showing me a collection of retailers where I can send my Enhanced Content.
 
@@ -109,9 +109,19 @@ the client tried to save the layout, but the API returned a 500.
 So even though the UI looks fine, if I reloaded the page
 I'd discover that it didn't save my work.
 
+NS
+Next I'm going to play a video where I'm looking at my list of Enhanced Content layouts.
+Then you'll see I'm going click one of the layout rows and then click the button to copy it.
+But under the hood, the API request to load that layout is going to fail. You'll see that below in my network tab.
+
+Let's watch...
+
+So click, copy, nothing happens, no feedback.
+
 And I want to emphasize that for end users the experience of errors is very frequently like this.
 The software behaves in a way that seems off, but it's subtle. It's hard to understand cause and effect.
-Ultimately that leads to lower confidence in the software.
+The software just feels sort of frustrating and unreliable,
+but it's difficult for users to even explain the problem.
 
 NS
 All right then so what error experience would we want?
@@ -119,18 +129,17 @@ Build out 1
 Well first we don't want them to happen in the first place!
 Clearly, preventing errors is preferable to dealing with them at runtime.
 
-And we employ several techniques to try to prevent errors.
+And we employ several techniques for that.
 Build out 2
 Testing, type checking, and code review are all helpful for preventing errors.
 
 NS
 But even with all this our software still has errors in production.
-So what should we do?
 
 Over time we learn about bugs and we fix them,
 say by supporting a case we hadn't known about before,
 or telling the user to correct their input,
-or adding a null check before we try to execute some logic.
+or adding a condition before we try to execute some logic.
 
 Build out
 And this process of widening the range of states that the program can handle,
@@ -138,29 +147,29 @@ so that errors become non-errors,
 is one of our day-to-day tasks in software maintenance.
 
 But I want to point out that these techniques are before-the-fact and after-the-fact.
-When we write tests that guard against errors, by definition they are errors we have thought about,
-and we're preventing them ahead of time.
-And we react to production errors by updating the code so they won't happen again.
-When we apply these techniques we're using knowledge that we already have.
+When we write tests that guard against an error condition,
+by definition it's an errors we have thought about,
+and we're preventing it ahead of time.
+And when we react to errors in production by updating the code so they won't happen again,
+we're again using knowledge that we already have.
 
-Importantly though, there's also category of errors that we don't know about concretely.
+There's also category of errors that we don't know about concretely.
 Our application has some code path where an error can happen,
 but we're not clearly aware that it's a problem yet.
 
-In other words, a guiding idea here is that error handling design needs to confront uncertainty.
+A guiding idea here is that the design needs to confront uncertainty.
 When we think about how to handle runtime errors, we're designing for situations
 that we don't have complete knowledge about at this moment.
 
-So in the remainder of this talk we're going to be deeper in the weeds, looking at code,
+In the remainder of this talk we're going to be deeper in the weeds, looking at code,
 but keep this main idea in mind:
 
-That error handling concerns situations that are somewhat unanticipated.
+That error handling concerns situations that are at least partially unanticipated.
 <pause>
-It follows that the first principle behind error design is communication,
-because we cannot fully automate the reaction to something that's unexpected.
+Therefore the first design principle is communicating to humans.
+We cannot implement a fully automated reaction to an unexpected problem.
 
-A good error design needs to provide guidance for
-    how do we inform end users that something went wrong.
+A good design primarily needs to provide guidance for, how do we inform end users that something went wrong.
     but also:
         how do we inform customer support, and PMs,
         and how do we inform ourselves?
@@ -482,24 +491,14 @@ the client will flash an error message in a bar near the top of the screen.
 It's a bit generic but at least it's providing feedback to the end-user that something went wrong.
 
 NS
-But let me show you another real example.
-
-In this video you'll see I'm looking at my list of Enhanced Content layouts.
-Then you'll see I'm going click one of the layout rows and then click the button to copy it.
-But under the hood, the API request to load that layout is going to fail. You'll see that below in my network tab.
-
-Let's watch...
-
-So click, copy, nothing happens, no feedback.
-
-And also remember those examples I showed at the beginning
-with the Enhanced Content builder where the API returned errors,
+But remember those examples I showed at the beginning
+with the Enhanced Content where the API returned errors,
 but the end user had no signal in the UI.
 
 So, in theory Salsify has this built-in feedback in the UI for failed API requests,
 but in practice it's not always working.
 
-Now in that video, the reason doesn't work is bit tricky.
+The reasons why doesn't work is bit tricky.
 The problem is that the scope for the error message is set to the copy modal,
 but that modal isn't visible when the error occurs.
 That's why you don't see the flash message.
