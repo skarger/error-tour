@@ -1,6 +1,6 @@
 Hi everyone, I'm Stephen Karger. Thank you for attending.
 
-So this material will range about 45 minutes,
+So as a heads up this material will range about 45 minutes,
 so there will be a little time at the end if people want to stick around for questions or comments.
 
 So let's get into it.
@@ -27,13 +27,13 @@ Build Out 1
     reasonably correct by the expectations of the program. Vs. if you build
     a payments app with floating point then it will be incorrect in a way that matters.
     A hallmark of good quality software is that it's gone to the trouble of
-    sorting out appropriate definitions of correctness for its situation, and implemented them.
+    sorting out appropriate definitions of correctness for its situation.
 * And a final quality trait, does the software handle errors gracefully?
     Our programs encounter errors for different reasons.
     They may be external like network failures, or unexpected user input,
     and also internal bugs like trying to use a null value that you expect to be non-null.
     But when errors happen, the software can still handle it well,
-    and that makes a real difference in the user's experience.
+    and that makes a huge difference in the user's experience.
 
 Build Out 2
 One reason I like this definition is that it helps distinguish
@@ -54,13 +54,13 @@ It's going to do a deep dive on that final quality trait, of error handling.
 
 Handling errors in software is hardly a new topic,
 it's more like an ordinary day-to-day concern in software engineering.
-But I also believe that it's a deceptive topic, because despite its ordinariness it's not solved in practice.
+But it's lso a deceptive topic, because despite its ordinariness it's not solved in practice.
 <pause>
 An ongoing challenge we have in software development is to keep it simple, just solve today's problem.
 That's a response to a very common reality where over-engineering leads to complexity and maintainability problems.
 
 Well as an industry we've done an excellent job of not over-engineering when it comes to error handling.
-The default approach there is to not really design it at all,
+At least in my experience, the default approach there is to not really design it at all,
 and deal with it case-by-case, likely in an inconsistent and incomplete way.
 
 But I think it's practically the definition of a low-hanging fruit,
@@ -69,8 +69,8 @@ is a direct way to produce higher quality software.
 
 And that's the origin of this talk. Earlier this year I was working on a random Jira ticket
 and during development I realized there were some potential errors,
-so I was writing some ad-hoc code to handle that, and I said I've been here before.
-I didn't want to spend time writing custom code,
+so I was writing some ad-hoc code to deal with that.
+And I was thinking that I didn't want to spend time writing custom code,
 but the only alternative in the scope of my ticket would have been to leave the code in a state
 where these errors would have created a very broken user experience.
 
@@ -79,11 +79,11 @@ So I said, I believe this should be more of a solved problem, but what is the so
 The aim of this talk is to take on that challenge, and it will do that by covering a few topics:
 * First, what are the actual goals when it comes to handling errors?
 * Then what tools do we have available and what are their tradeoffs?
-* And what is an overall error handling strategy that strives to keep things simple but manages to provide a quality user experience?
+* And what is an overall error handling strategy that strives to keep things simple but manages to deliver a quality user experience?
 
 NS
 OK then. We're looking at the Enhanced Content builder UI in Salsify.
-In this presentation I'm going to pick on Enhanced Content a lot.
+Unfortunately for Enhanced Content I'm going to use it for my examples throughout this presentation.
 I've opened this publish dropdown in the top-right and it's working as intended,
 showing me a collection of retailers where I can send my Enhanced Content.
 
@@ -114,7 +114,7 @@ I'd discover that it didn't save my work.
 NS
 Next I'm going to play a video where I'm looking at my list of Enhanced Content layouts.
 Then you'll see I'm going click one of the layout rows and then click the button to copy it.
-But under the hood, the API request to load that layout is going to fail. You'll see that below in my network tab.
+But under the hood, the API request to copy that layout is going to fail. You'll see that below in my network tab.
 
 Let's watch...
 
@@ -131,7 +131,7 @@ Build out 1
 Well first we don't want them to happen in the first place!
 Clearly, preventing errors is preferable to dealing with them at runtime.
 
-And we employ several techniques for that.
+And we already employ several techniques for that.
 Build out 2
 Testing, type checking, and code review are all helpful for preventing errors.
 
@@ -153,9 +153,9 @@ When we write tests that guard against an error condition,
 by definition it's an error we have thought about,
 and we're preventing it ahead of time.
 And when we react to errors in production by updating the code so they won't happen again,
-we're again using knowledge that we already have.
+we're similarly using knowledge that we already have.
 
-There's also category of errors that we don't know about concretely.
+But there's also the set of errors that we don't know about concretely.
 Our application has some code path where an error can happen,
 but we're not clearly aware that it's a problem yet.
 
@@ -220,7 +220,7 @@ These languages shown here all brought a concept of Exceptions.
 NS
 I'm going to take a minute to review the basics,
 starting with this example in Java.
-In this example I want to parse some strings into integers.
+In this program I want to parse some strings into integers.
 It works for the string 1000 but then throws an exception for the string A grand.
 And this is the general form of Exceptions:
 Try running some code step by step, but if any of the statements fail,
@@ -243,7 +243,7 @@ So Exceptions were a way of preventing the problem in C where the programmer for
 Because exceptions forcibly re-route the code execution.
 
 NS
-But even though that's helpful it has a dark side.
+But even though that's helpful it creates some other problems.
 Exceptions introduce implicit control flow, sort of like a GOTO statement, where they make code abruptly jump.
 
 Here we have function a who calls b who calls c,
@@ -251,11 +251,7 @@ which is a little more like a real program
 where we have a deep call stack,
 which often will span multiple files.
 
-We won't always have a compact try/catch or begin/rescue
-where you can see everything at a glance.
-The error handling code may live far away from whatever throws the exception.
-
-This can make the logic hard to reason about,
+The presence of Exceptions can make the logic hard to reason about,
 because as you read the code it's no longer totally linear.
 If any function call raises exception then it can yank the execution to some far away handler block.
 
@@ -274,7 +270,7 @@ That's even more of a concern with lower-level programming where
 you are directly managing memory or files or interfacing with hardware.
 While researching this talk I found a story about incorporating C++
 into the software for driving the Mars rover,
-and one of their decisions was to not use exceptions at all, too risky.
+and one of their conditions to use C++ was to not use exceptions at all, too risky.
 
 NS
 And for these reasons, a couple recent languages that have become popular decided not to have exceptions.
@@ -342,7 +338,7 @@ So this can be easier to follow than the control flow jumps you get with excepti
 
 Now we can adopt a Railway Oriented style in Ruby and JavaScript,
 where we represent errors as data that we return from functions.
-And then using TypeScript for example you can even enforce
+And then for example using TypeScript you can even enforce
 that the code handles the success and error variants.
 
 NS
@@ -354,7 +350,7 @@ or any other returned data indicating that an error occurred.
 The key contrast is that Exceptions have that forcible unwinding of the call stack,
 and errors-as-data does not.
 
-One place where representing errors-as-data fits well is for errors that are part of the program's domain.
+One place where representing errors as data fits well is for errors that are part of the program's domain.
 If encountering this error is a normal event that you expect to happen sometimes,
 then it's nice to process that error as plain old data flowing through the program,
 rather than using a special exception handling construct.
@@ -364,6 +360,7 @@ handling errors is dealing with situations we do not expect. But now I'll make t
 precise by saying that it's actually Exceptions that fit best with unexpected situations.
 When something happens that really is outside the circumstances this program is intended to support,
 exceptions are a helpful way to just bail out immediately.
+As they say, Exceptions should be exceptional.
 
 However I want to note that it can be fuzzy to decide
 whether something is a normal expected problem or if it's exceptional.
@@ -372,8 +369,8 @@ An example of that which comes up at Salsify is when we make HTTP requests
 between our backend services. Now it's well within the domain of HTTP itself
 that you can receive a 404 or a 500 response.
 But when we're making inter-service requests,
-getting those response statuses is usually not part of our application's domain,
-because the HTTP request is just an implementation detail of our service architecture,
+getting those response statuses is usually not part of our application's domain. It's not quite like web browsing.
+The HTTP request is just an implementation detail of our service architecture,
 it happens to be how we're loading data.
 If we don't get a 200-level response it most likely means something has gone wrong
 in a way that we aren't intending to support as a normal case in our domain.
@@ -398,7 +395,7 @@ If we want to have a clear boundary in our program, we can ask:
 Will this work if between these two sub-systems I only can pass data?
 If I were to extract these two parts into separate programs,
 would it work to communicate over a web API or a message queue?
-And could they effectively signal error situations to each other?
+And could they effectively signal errors to each other?
 
 If it's desirable for those parts of the program to be loosely coupled,
 then one of the steps toward that is to communicate errors as data.
@@ -416,14 +413,14 @@ in a similar style to Rust, but TypeScript is meant to integrate directly into J
 NS
 You can see in this Clojure example it's calling Java to try to parse the string to an integer,
 it calls the Java parseInt function to do that,
-which it throws the exact same Java exception as in the earlier example.
+which throws the exact same Java exception as in the earlier example.
 
-So even though Clojure is functional language tha puts heavy emphasis on passing data
+So even though Clojure is functional language that puts heavy emphasis on passing data
 through your program, as a practical matter Java throws exceptions so Clojure has to work with that.
 
-And similarly with TypeScript we still need to deal with JavaScript exceptions anyway.
+And similarly with TypeScript we still need to deal with JavaScript exceptions.
 So unless it's truly helpful to process the error as data,
-then might as well just throw an exception to bail out.
+if you want to bail out then might as well just throw an exception.
 
 NS
 A final important consideration is how do we make errors visible to ourselves?
@@ -446,7 +443,7 @@ Is it more like this? And if so we really ought to deal with it.
 
 NS
 In one of my previous jobs we had a situation where most of the time our cases looked like this,
-but on the two days of the year when the times changed for daylight savings time,
+but on the two days of the year when the times changed for daylight savings,
 
 NS
 the edge was like this and we would have an avalanche of customer problems.
@@ -464,7 +461,7 @@ So if you use data values for errors you can still have Bugsnag
 
 NS
 For the back stretch of this talk I want to get into some more Salsify-specific details.
-At the beginning I was talking about doing the more deliberate design for error handling,
+At the beginning I was talking about doing more deliberate design for error handling,
 but the truth is we already do that to some degree in our shared libraries.
 
 NS
@@ -490,30 +487,30 @@ Or in the case of a background job, once we catch the error, then what?
 
 We still need to communicate to the end user.
 
-Making that final step, connecting the dots on the client side, really improves quality a lot.
+Making that final step, connecting the dots on the client side, is crucial to a quality experience.
 That may be an obvious point but in real world development it's easy for it to fall through the cracks.
 
 NS
 That said, just as with the backend libraries, we already do have some built-in default error handling within the main Salsify client app.
 
 What the frontend error handler service provides is when an Ember route tries to load data from the API,
-but the API request returns an error status like a 500,
+but the API request returns an error status,
 the client will flash an error message in a bar near the top of the screen.
 It's a bit generic but at least it's providing feedback to the end-user that something went wrong.
 
-But remember those examples I showed at the beginning
-with the Enhanced Content where the API returned errors,
-but the end user got no indication of that.
+But I want to remind you of those examples I showed at the beginning
+with the Enhanced Content UI where the end user
+gets no indication when the API returns errors.
 
 So, in theory Salsify has this built-in feedback in the UI for failed API requests,
 but in practice it's not always working.
 
-In those specific examples there are a couple different reasons why it didn't work
+In those specific examples there are a couple different reasons why it doesn't work
 that come out of low-level details in the Enhanced Content engine.
 So you could blame the EC engine for this.
 But I hope many of you can understand when we're working on an Ember engine,
-we can't see the real behavior for failed requests when we use
-a normal development workflow with ember serve, or in our engine's test suite,
+we can't see the realistic behavior for failed requests when we use
+a normal development workflow with ember serve, or with our engine's automated test suite,
 because that message bar behavior is provided by the main app in dandelion.
 The only way to verify it is to package our engine into dandelion
 and test end-to-end, including forcing the backend API server to return a 500.
@@ -528,21 +525,19 @@ Because it ultimately doesn't matter whether the server indicates errors in a we
 if we don't carry that through end-to-end so that the client communicates the problem to the user.
 
 In these examples I focused on synchronous web requests,
-but communication of background job failures might be even more important for a lot of Salsify features.
+but communication of background job failures is even more important for a lot of Salsify features.
 
-As I showed before we have the backend error reporting extension for DelayedJob by default,
-byt we don't automatically have some screen in-app where we would log failed jobs.
+As I showed before we have the backend error reporting extension for DelayedJob,
+byt we don't automatically have some screen in-app where we would display failed jobs to the user.
 
-So one actionable takeaway here is every time we add a new background job, establish how to communicate to users when it fails.
-Similarly, for any new API request the client makes, a good baseline is to verify that failures will flash an error message in the style of the main dandelion client.
+So one actionable takeaway here is every time we add a new background job, establish with PM and UX how to communicate to users when it fails.
+Similarly, for any new API request the client makes, a good baseline is to verify that failures actually will flash an error message in the style of the main dandelion client.
 
 NS
 Beyond server errors, I want to cover errors in the client itself.
 
 NS
 In this slide, I have a try-catch block set up that handles when I call this undefinedFunction on line 2.
-
-Build Out 1
 But see lower down on line 7 there's no catch block where I call anotherUndefinedFunction.
 
 Build Out 2
@@ -562,9 +557,9 @@ But in the code there's no catch chained onto that promise.
 NS
 In this case the browser will fire the unhandledrejection event.
 
-Like window.onerror, this can be configured as a last resort handler for rejected promises.
+This can be configured as the last resort handler for rejected promises.
 
-In fact, for the browser applications Bugsnag sets up basic error reporting
+In fact, for browser applications Bugsnag sets up basic error reporting
 by configuring those window.onerror and unhandledrejection events.
 
 NS
@@ -573,11 +568,11 @@ that's meant as the backstop for unhandled errors in Ember apps.
 
 Build Out
 And then Salsify's error-reporting library abstracts over Ember.onerror.
-Ultimately, the error-reporting library configures reporting to Bugsnag.
+The error-reporting library configures our reporting to Bugsnag.
 Currently there's a one-time setup for that in Dandelion, and it then applies to all our mounted engines.
 
-But it does mean that in your engine you can't use these top-level error events yourself.
-In particular you can't use them as a way to communicate problems to end users, in addition to Bugsnag.
+But it does mean in your engine you can't use these top-level error events yourself.
+In particular you can't use them as a way to communicate problems to end users, in addition to reporting Bugsnag.
 This is another place where the micro-frontends project will enable some improvements.
 
 NS
@@ -606,8 +601,8 @@ Well the overall layout table still renders, but because the status component er
 after it is gone. You can see there's no status, but also the rows after the first one aren't showing.
 
 Build Out
-Also, unexpectedly the error thrown by that component
-also causes this Amazon quota bar up at the top to break as well, where now it's not showing counts anymore.
+Also, unexpectedly the error thrown by that status  component
+also causes this Amazon quota bar to break as well, where now it's not showing counts anymore.
 That's a somewhat arbitrary side effect of the fact that that the Amazon count is asynchronously fetched,
 and the component error prevented it from processing.
 
@@ -622,7 +617,7 @@ But as you can see in this example, the effects of a component error on the over
 so there's no guarantee that an in-page error display would always work.
 
 A more heavy-handed but robust approach would be to handle client-side errors
-like this by fully redirecting to a URL that shows error page.
+like this by fully redirecting to a URL that shows an error page.
 Make it more like a server-rendered website.
 It's a little severe, but again for an unexpected error our strategy devolves to communication,
 so being loud and clear seems OK.
@@ -662,7 +657,7 @@ If we display that message in the client it won't
 communicate anything about specific action that prompted the error.
 That's extra relevant for SPAs because the client
 is often firing off multiple requests,
-they're not one-to-one with the user's clicks.
+they don't correspond one-to-one with the user's clicks.
 
 NS
 So one way to try to confront that is to view each GraphQL field as an entry point.
@@ -683,7 +678,7 @@ And then if the client wants to add in the message field returned by the server,
 sure, sometimes that may add some helpful details.
 But the key design tactic is we've defined the entry point in a way that supports a reasonable communication to the end user.
 
-OK. So then for errors in the client application itself we have a similar challenge
+OK. So then for errors in the client application we have a similar challenge
 because the client has so many entry points.
 Every component action and every attribute in every nested component and
 are independent entry points that can error.
@@ -697,7 +692,7 @@ would add a lot of code and would not be the right level of detail to communicat
 
 And again I'd suggest re-defining the entrypoint,
 and zooming out to those built-in browser events for unhandled errors.
-They can put a backstop in place to ensure we have communication in place for any error.
+They can put a backstop in place to ensure we have communication for any error.
 
 NS
 Because the fundamental idea here is that when a runtime exception happens,
@@ -711,9 +706,9 @@ or it doesn't, so its only recourse is to report the issue to humans.
 
 That drives this design of pushing error handling to the boundaries.
 Because if we understand exceptions this way, then there's absolutely no point messing around
-with error handlingin lower-levels of our programs.
+with error handling in lower-levels of our programs.
 
-This approach is different than a lot of real-world code, including what I've written myself,
+But that mindset is different than a lot of real-world code, including what I've written myself,
 where error handling logic is strewn throughout the codebase.
 You'll see some try-catches on some functions but not all,
 some modules define a custom Exception class, others just throw built-in Exceptions,
