@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+  <script>
+    window.onerror = function(message) {
+      alert(`window.onerror ${message}`);
+    };
+  </script>
+
+</head>
+
+<script>
+  try {
+    undefinedFunction();
+  } catch (e) {
+    alert(`catch: ${e}`);
+  }
+
+  anotherUndefinedFunction();
+</script>
+
+<body>
+
+</body>
+</html>
