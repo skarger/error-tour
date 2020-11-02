@@ -255,27 +255,31 @@ where you can see everything at a glance.
 The error handling code may live far away from whatever throws the exception.
 
 This can make the logic hard to reason about,
-because when you are reading the exception handling code somewhere in the program,
-it's not always obvious what the context is.
-When we get here, what details do we need to clean up?
-Do we even have the references in scope that we would need
-in order to clean up?
-What should we do at the end of the handler?
-Is it important for it to re-raise so that we make it to some handler higher in the stack?
+because as you read the code it's no longer totally linear.
+If any function call raises exception then it can yank the execution to some far away handler block.
 
-When you have error handlers layered across your code base it's difficult
-to verify that they all do the right thing.
+A closely related problem is that since exceptions will eject up through the call stack,
+you can have functions at intermediate levels that put the program into an inconsistent state.
 
-And many software engineers out there see Exceptions as a bad feature.
-They're overused for control flow, and it becomes too difficult to handle exceptions safely.
+Looking at this code on the slide, imagine that in function b
+we compute new values for a Salsify product and we update an in-memory cache with those values.
+Then function c is supposed to make a request to dandelion to update the product,
+but it raises an exception, and the product isn't actually updated.
+So we shoot right to the handler block on line 16,
+and b never has the chance to undo the update to the cache,
+so our program ends up in an inconsistent state.
 
+That's even more of a concern with lower-level programming where
+you are directly managing memory or files or interfacing with hardware.
+While researching this talk I found a story about incorporating C++
+into the software for driving the Mars rover,
+and one of their decisions was to not use exceptions at all, too risky.
 
 NS
-In fact some language designers view these problems with Exceptions as unacceptable.
+And a couple recent languages that have become popular decided not to have exceptions at all.
 
 Build Out
-A couple more recent languages that have become popular decided not to have exceptions at all.
-They went back to signalling errors with return values, like C, just with some twists.
+Go and Rust went back to signalling errors with return values, like C, just with some twists.
 
 NS
 In Go, the big change compared to C is that functions return two distinct values,
@@ -308,8 +312,7 @@ and double just multiplies a number by 2 and returns a plain number.
 
 NS
 So then in the next slide I have a full demo using these functions.
-The main program calls the two_track_computation function and passes it different strings.
-The reason I've called it two_track_computation will be clear in a moment.
+The main program passes different strings to this function that I've named two_track_computation.
 
 Looking at two_track_computation, it starts out by calling parse_number,
 and the Result value flows into map_err which is just there
@@ -344,33 +347,38 @@ that the code handles the success and error variants.
 NS
 But there are some tradeoffs to consider about that. I'll mention a few of them.
 
+When I say errors-as-data I'm lumping together all these styles of signaling errors with return values,
+whether it's a Result type like in Rust, or a C-style error code,
+or any other returned data indicating that an error occurred.
+The key contrast is that Exceptions have that forcible unwinding of the call stack,
+and errors-as-data does not.
+
 One place where representing errors-as-data fits well is for errors that are part of the program's domain.
 If encountering this error is a normal event that you expect to happen sometimes,
 then it's nice to process that error as plain old data flowing through the program,
-rather than using exceptions as a special construct.
+rather than using a special exception handling construct.
 
-That's really a way of re-stating what I mentioned earlier that a core role of
-error handling is dealing with situations we do not expect. But now I'll make that more
+That's really a way of re-stating what I mentioned earlier that a core issue when
+handling errors is dealing with situations we do not expect. But now I'll make that more
 precise by saying that it's actually Exceptions that fit best with unexpected situations.
 When something happens that really is outside the circumstances this program is intended to support,
 exceptions are a helpful way to just bail out immediately.
 
-However I want to say that it can be fuzzy to decide
+However I want to note that it can be fuzzy to decide
 whether something is a normal expected problem or if it's exceptional.
 
 An example of that which comes up at Salsify is when we make HTTP requests
-between our backend services. Now it's well within the domain of HTTP
-that you can receive a 404 or a 500 response, they're not really exceptional.
+between our backend services. Now it's well within the domain of HTTP itself
+that you can receive a 404 or a 500 response.
 But when we're making inter-service requests,
 getting those response statuses is usually not part of our application's domain,
 because the HTTP request is just an implementation detail of our service architecture,
 it happens to be how we're loading data.
-If we don't get a 200-level response it likely means something has gone wrong
+If we don't get a 200-level response it most likely means something has gone wrong
 in a way that we aren't intending to support as a normal case in our domain.
 We can retry if the error response is a transient network error,
 but otherwise the application just has to bail out at that point.
-So it's debatable, but raising an exception
-when a backend service sees that 404 response is a reasonable reaction.
+So raising an exception when a backend service sees that 404 response is a sane default.
 
 NS
 Then another tradeoff to consider with errors-as-data is loose coupling.
@@ -502,13 +510,14 @@ but in practice it's not always working.
 In those specific examples there are a couple different reasons why it didn't work
 that come out of low-level details in the Enhanced Content engine.
 So you could blame the EC engine for this.
-But when we're working on an Ember engine like this, in a normal development workflow we can't see that behavior,
+But when we're working on an Ember engine like this,
+in a normal development workflow we can't see that error message behavior for failed requests,
 because it's provided by the main app in dandelion. The only way to see it is to package the engine into dandelion
 and test end-to-end, including forcing the backend API server to return a 500.
 
-Also with our current setup, it's difficult to write an automated test
-in the Enhanced Content engine that realistically exercises the UI behavior for a failed API request,
-again because the error message bar lives in dandelion.
+Also with our current setup, we can't write an automated test
+in the Enhanced Content engine that realistically exercises that error message bar for a failed API request,
+again because in production it's partially provided by dandelion.
 
 This is a place where the micro-frontends initiative should help, because a micro-app will
 be able to manage more of its own UI, including its error display, so we won't have the same pitfalls as with an engine.
