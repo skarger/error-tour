@@ -271,13 +271,6 @@ So we shoot right to the handler block on line 16,
 and b never has the chance to undo the DB update,
 so our program ends up in an inconsistent state.
 
-That's even more of a concern with lower-level programming where
-you are managing memory or files or interfacing with hardware.
-While researching this talk I found a story about NASA building the software
-for driving the Mars rover. They had existing code in plain C and they wanted to incorporate C++,
-but one of their conditions was they had to disable exceptions because
-they add too much uncertainty to the control flow.
-
 NS
 And for these reasons, a couple recent languages that have become popular decided not to have exceptions.
 
