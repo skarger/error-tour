@@ -31,7 +31,8 @@ Build Out 1
 * And a final quality trait, does the software handle errors gracefully?
     Our programs encounter errors for different reasons.
     They may be external like network failures, or unexpected user input,
-    and also internal bugs like trying to use a null value that you expect to be non-null.
+    and also internal bugs like trying to use a null value that you expect to be non-null,
+    or calling a library function that throws an exception.
     But when errors happen, the software can still handle it well,
     and that makes a huge difference in the user's experience.
 
@@ -80,12 +81,12 @@ The aim of this talk is to take on that challenge, and it will do that by coveri
 * Then what tools do we have available and what are their tradeoffs?
 * And what is an overall error handling strategy that strives to keep things simple but manages to deliver a quality user experience?
 
-Many people here are already going to be familiar with some of this material
-but I hope you'll find it interesting and helpful to have it all brought together.
+People here are already going to be familiar with some of this material
+but I hope you'll find it interesting and useful to have it all brought together.
 
 NS
 OK then. We're looking at the Enhanced Content builder UI in Salsify.
-Unfortunately for Enhanced Content I'm going to use it for my examples throughout this presentation.
+Unluckily for Enhanced Content I'm going to use it for my examples throughout this presentation.
 I've opened this publish dropdown in the top-right and it's working as intended,
 showing me a collection of retailers where I can send my Enhanced Content.
 
@@ -260,19 +261,22 @@ If any function call raises exception then it can yank the execution to some far
 A closely related problem is that since exceptions will eject up through the call stack,
 you can have functions at intermediate levels that put the program into an inconsistent state.
 
-Looking at this code on the slide, imagine that in function b
-we compute new values for a Salsify product and we update an in-memory cache with those values.
-Then function c is supposed to make a request to dandelion to update the product,
-but it raises an exception, and the product isn't actually updated.
+Looking at this code on the slide, imagine that it lives in a Salsify service.
+And in function b the goal is compute a new value for a product,
+and then save some bookkeeping data about that to the service's database.
+
+Then b calls function c to make a request to dandelion to update the product,
+but that raises an exception, and the product isn't actually updated.
 So we shoot right to the handler block on line 16,
-and b never has the chance to undo the update to the cache,
+and b never has the chance to undo the DB update,
 so our program ends up in an inconsistent state.
 
 That's even more of a concern with lower-level programming where
-you are directly managing memory or files or interfacing with hardware.
-While researching this talk I found a story about incorporating C++
-into the software for driving the Mars rover,
-and one of their conditions to use C++ was to not use exceptions at all, too risky.
+you are managing memory or files or interfacing with hardware.
+While researching this talk I found a story about NASA building the software
+for driving the Mars rover. They had existing code in plain C and they wanted to incorporate C++,
+but one of their conditions was they had to disable exceptions because
+they add too much uncertainty to the control flow.
 
 NS
 And for these reasons, a couple recent languages that have become popular decided not to have exceptions.
@@ -617,10 +621,10 @@ can address it and prevent it from happening in the future. But what else would 
 
 The first approach that came to my mind was to flash an error message on the same page.
 But as you can see in this example, the effects of a component error on the overall page rendering can be unpredictable,
-so there's no guarantee that an in-page error display would always work.
+so there's no guarantee that an in-page error display would always render.
 
-A more heavy-handed but robust approach would be to handle client-side errors
-like this by fully redirecting to a URL that shows an error page.
+A more heavy-handed but robust approach for an unhandled client-side error
+like this is to fully redirect to an error page URL.
 Make it more like a server-rendered website.
 It's a little severe, but again for an unexpected errors our strategy devolves to communication,
 so being loud and clear seems OK.
@@ -679,7 +683,9 @@ the client side request. The client will have context on the domain action it's 
 GraphQL query, so if the server errors, the client can display a message referencing that domain action.
 And then if the client wants to add in the message field returned by the server,
 sure, sometimes that may add some helpful details.
-But the key design tactic is we've defined the entry point in a way that supports a reasonable communication to the end user.
+But the key design tactic is we've defined the entry point in a way
+that supports a reasonable communication to the end user.
+The art to that is we have to think of the whole system, we can't just think in terms of one codebase.
 
 OK. So then for errors in the client application we have a similar challenge
 because the client has so many entry points.
