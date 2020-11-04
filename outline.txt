@@ -1,3 +1,4 @@
+
 Hi everyone, I'm Stephen Karger. Thank you for attending.
 
 So as a heads up this material will range about 45 minutes,
@@ -80,9 +81,6 @@ The aim of this talk is to take on that challenge, and it will do that by coveri
 * First, what are the actual goals when it comes to handling errors?
 * Then what tools do we have available and what are their tradeoffs?
 * And what is an overall error handling strategy that strives to keep things simple but manages to deliver a quality user experience?
-
-People here are already going to be familiar with some of this material
-but I hope you'll find it interesting and useful to have it all brought together.
 
 NS
 OK then. We're looking at the Enhanced Content builder UI in Salsify.
@@ -171,6 +169,8 @@ but keep this main idea in mind:
 
 That error handling concerns situations that are at least partially unanticipated.
 <pause>
+
+NS
 Therefore the first design principle is communicating to humans.
 We cannot implement a fully automated reaction to an unexpected problem.
 
@@ -247,16 +247,15 @@ Because exceptions forcibly re-route the code execution.
 
 NS
 But even though that's helpful it creates some other problems.
-Exceptions introduce implicit control flow, sort of like a GOTO statement. They make code abruptly jump.
+Exceptions introduce implicit control flow, sort of like a GOTO statement.
 
 Here we have function a who calls b who calls c,
-which is a little more like a real program
-where we have a deep call stack,
-which often will span multiple files.
+and c raises an exception.
+And the handler block that catches it lives in some other file.
 
 The presence of Exceptions can make the logic hard to reason about,
-because as you read the code it's no longer totally linear.
-If any function call raises exception then it can yank the execution to some far away handler block.
+because as you trace the code it's no longer totally linear.
+If any function call raises an exception then it can abruptly yank the execution to some code far away.
 
 A closely related problem is that since exceptions will eject up through the call stack,
 you can have functions at intermediate levels that put the program into an inconsistent state.
@@ -282,7 +281,7 @@ In Go, the big change compared to C is that functions return two distinct values
 with the error value in the second position,
 so return values and errors are not overloaded.
 (pause)
-And this gets rid of the control flow jumps. But now you are free to ignore the error value again.
+And this gets rid of the control flow jumps. But you are free to ignore the error value again.
 
 NS
 In Rust, they moved the problem into the type system.
@@ -342,7 +341,7 @@ And then for example using TypeScript you can even enforce
 that the code handles the success and error variants.
 
 NS
-But there are some tradeoffs to consider about that. I'll mention a few of them.
+But there are some tradeoffs to consider about that.
 
 When I say errors-as-data I'm lumping together all these styles of signaling errors with return values,
 whether it's a Result type like in Rust, or a C-style error code,
@@ -373,7 +372,7 @@ The HTTP request is just an implementation detail of our service architecture,
 it happens to be how we're loading data.
 If we don't get a 200-level response it most likely means something has gone wrong
 in a way that we aren't intending to support as a normal case in our domain.
-We can retry if the error response is a transient network error,
+We can retry if it's a transient network error,
 but otherwise the application just has to bail out at that point.
 So raising an exception when a backend service sees that 404 response is a sane default.
 
@@ -425,7 +424,7 @@ NS
 A final important consideration is how do we make errors visible to ourselves?
 
 A key challenge is that errors are hard for developers to see.
-They happen infrequently, and they often only come out in real-world usage.
+They happen infrequently, and they often only come out in real-world usage, and they're underreported.
 So mentally it's easy discount their importance.
 
 Sometimes we realize there's a potential for an error, but we dismiss it as an "edge case".
@@ -559,21 +558,22 @@ In this case the browser will fire the unhandledrejection event.
 
 This can be configured as the last resort handler for rejected promises.
 
-In fact, for browser applications Bugsnag sets up basic error reporting
-by configuring those window.onerror and unhandledrejection events.
+In fact, in a vanilla browser applications
+Bugsnag sets up error reporting by configuring those two events.
 
 NS
-In our case, Ember also provides a function, Ember.onerror,
+In our case, Ember provides a function, Ember.onerror,
 that's meant as the backstop for unhandled errors in Ember apps.
 
 Build Out
-And then Salsify's error-reporting library abstracts over Ember.onerror.
-The error-reporting library configures our reporting to Bugsnag.
-Currently there's a one-time setup for that in Dandelion, and it then applies to all our mounted engines.
+And then Salsify's error-reporting library sets Ember.onerror.
+It configures our reporting to Bugsnag.
+Currently there's a one-time setup for that in Dandelion,
+and then it applies to all our mounted engines.
 
-But it does mean in your engine you can't use these top-level error events yourself.
-In particular you can't use them as a way to communicate problems to end users, in addition to reporting Bugsnag.
-This is another place where the micro-frontends project will enable us to make some improvements.
+But it does mean in your engine you can't override Ember.onerror yourself.
+In particular you can't use it as a way to communicate problems to end users, in addition to the Bugsnag reporting.
+But it will bubble the errors up to those built-in browser events. I'll come back to that in a couple minutes.
 
 NS
 Now let me make this more visual with an example of a client error.
@@ -601,26 +601,28 @@ Well the overall layout table still renders, but because the status component er
 after it is gone. You can see there's no status, but also the rows after the first one aren't showing.
 
 Build Out
-Also, unexpectedly the error thrown by that status component
-also causes this Amazon quota bar to break as well, where now it's not showing counts anymore.
-That's a somewhat arbitrary side effect of the fact that the Amazon count is asynchronously fetched,
-and the component error prevented it from processing.
+Also, a somewhat unpredictable side effect is this Amazon quota bar breaks as well,
+where now it's not showing counts anymore.
+That happens because the Amazon quota count is asynchronously fetched,
+and the error thrown in status component happened before it finished processing.
 
-So bottom line, for end-users again the behavior when errors happen is puzzling.
-The page definitely looks off, but there's no direct message that an error occurred.
+Bottom line, when errors happen again the experience for end-users is the app just feels busted.
 
-More than anything else, we want errors like this reported to Bugsnag so we
-can address it and prevent it from happening in the future. But what else would we need to do to create a higher quality experience?
+Now more than anything else, we would want errors like this reported to Bugsnag so we
+can address it and prevent it from happening in the future.
+But what else would it take to create a higher quality experience?
+
+Well for unexpected errors our strategy devolves to communication, so that's the place to focus.
 
 The first approach that came to my mind was to flash an error message on the same page.
-But as you can see in this example, the effects of a component error on the overall page rendering can be unpredictable,
-so there's no guarantee that an in-page error display would always render.
+But one question is where you would do that, since you can't use Ember.onerror?
 
-A more heavy-handed but robust approach for an unhandled client-side error
-like this is to fully redirect to an error page URL.
-Make it more like a server-rendered website.
-It's a little severe, but again for an unexpected errors our strategy devolves to communication,
-so being loud and clear seems OK.
+Well you can use those built-in browser events.
+At that point you are outside of Ember, so you're on your own,
+for example you can't use the Ember flash-message service.
+But instead you could inject a standalone DOM node to show an error message,
+or maybe even fully redirect to an error page, like a server-rendered website.
+It's not that sophisticated but it's a lot better than nothing.
 
 NS
 I want to go back to the server-side for a moment and discuss
@@ -632,7 +634,7 @@ If the backend handles all errors at the boundary of the action,
 it provides a natural subject to communicate about to the end user.
 If it failed, then no matter why it failed,
 whatever deep internal code of the application caused the problem,
-as a default communication strategy we can just reference the top-level domain action that prompted the error.
+as a communication strategy we can just reference the top-level domain action that prompted the error.
 
 Like if we're executing a background job that publishes Enhanced Content, then at the entry point to that job
 we know that context, so the simple strategy is to handle all errors there, and for the end-user, just say
@@ -682,19 +684,22 @@ The art to that is we have to think of the whole system, we can't just think in 
 
 OK. So then for errors in the client application we have a similar challenge
 because the client has so many entry points.
-Every component action and every attribute in every nested component and
+Every component action and every attribute in every nested component
 are independent entry points that can error.
 
 For component actions, those are mostly one-to-one with end-user actions.
 Therefore they make good entrypoints to communicate about,
 so it would make sense to catch exceptions at their top-level.
 
-For component attributes, catching exceptions at all of them individually
-would add a lot of code and would not be the right level of detail to communicate.
+For component attributes, it's a very similar problem to errors resolving GraphQL queries,
+where if we tried to catch exceptions at all of them individually it
+would add a ton of code but still not provide the right level of detail to communicate.
+Actually for errors in random component attributes there isn't any clear way to infer what that context even is.
 
-And again I'd suggest re-defining the entrypoint,
-and zooming out to those built-in browser events for unhandled errors.
-They can put a backstop in place to ensure we have communication for any error.
+So again I'd suggest re-defining the entrypoint for that case, and say that it's the whole engine or micro-app,
+and use those built-in browser events for unhandled errors.
+Now I admit that's pretty coarse grained, but it's easy,
+and it successfully puts a backstop in place to ensure we have basic communication for any error.
 
 NS
 Because the fundamental idea here is that when a runtime exception happens,
