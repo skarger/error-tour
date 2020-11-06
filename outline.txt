@@ -62,7 +62,7 @@ That's a response to a very common reality where over-engineering leads to compl
 
 Well as an industry, when it comes to error handling, I'd say we have done an excellent job of not over-engineering.
 At least in my experience, the default there is to not really design it.
-The most common approach is to deal with errors case-by-case, in a way that is somewhat inconsistent and incomplete.
+The common approach is to deal with errors case-by-case, in a way that is somewhat inconsistent and incomplete.
 
 But I think it's practically the definition of a low-hanging fruit,
 where being slightly more deliberate with error handling
@@ -79,7 +79,7 @@ I shouldn't be spending time writing this ad-hoc code.
 I wanted a stronger ethos for how to handle errors. That led to the questions I'll answer in this talk:
 
 * First, what are the actual goals when it comes to handling errors?
-* Then what tools do we have available and what are their tradeoffs?
+* Then, to review, what tools do we have available and what are their tradeoffs?
 * And what is an overall error handling strategy that strives to keep things simple but manages to deliver a quality user experience?
 
 NS
@@ -161,7 +161,7 @@ but we're not clearly aware that it's a problem yet.
 
 A guiding idea here is that the design needs to confront uncertainty.
 When we think about how to handle runtime errors, we're designing for situations
-that we don't have complete knowledge about at this moment.
+that we don't have complete knowledge about.
 
 In the remainder of this talk we're going to be deeper in the weeds, looking at code,
 but keep this main idea in mind:
@@ -264,7 +264,7 @@ and then save some bookkeeping data about that to the service's database.
 
 Then b calls function c to make a request to dandelion to update the product,
 but that raises an exception, and the product isn't actually updated.
-So we shoot right to the handler block on line 16,
+So we shoot right to the handler block in the lower code snippet,
 and b never has the chance to undo the DB update,
 so our program ends up in an inconsistent state.
 
@@ -344,8 +344,9 @@ But there are some tradeoffs to consider about that.
 When I say errors-as-data I'm lumping together all these styles of signaling errors with return values,
 whether it's a Result type like in Rust, or a C-style error code,
 or any other returned data indicating that an error occurred.
-The key contrast is that Exceptions have that forcible unwinding of the call stack,
-and errors-as-data does not.
+
+The key contrast is that Exceptions forcibly unwind the call stack,
+and errors-as-data do not.
 
 One place where representing errors as data fits well is for errors that are part of the program's domain.
 If encountering this error is a normal event that you expect to happen sometimes,
@@ -386,7 +387,7 @@ When we have two programs communicating remotely,
 there's this imperative to make them work with looser coupling.
 
 But even inside one program it may be useful to apply that lesson from web APIs,
-and pass pure data around in our program to promote modularity.
+and pass pure data around to promote modularity.
 If we want to have a clear boundary in our program, we can ask:
 Will this work if between these two sub-systems I only can pass data?
 If I were to extract these two parts into separate programs,
@@ -556,7 +557,7 @@ In this case the browser will fire the unhandledrejection event.
 
 This can be configured as the last resort handler for rejected promises.
 
-In fact, in a vanilla browser applications
+In fact, in a vanilla JavaScript browser application
 Bugsnag sets up error reporting by configuring those two events.
 
 NS
@@ -604,13 +605,13 @@ where now it's not showing counts anymore.
 That happens because the Amazon quota count is asynchronously fetched,
 and the error thrown in status component happened before it finished processing.
 
-Bottom line, when errors happen again the experience for end-users is the app just feels busted.
-
 Now more than anything else, we would want errors like this reported to Bugsnag so we
 can address it and prevent it from happening in the future.
-But what else would it take to create a higher quality experience?
 
-Well for unexpected errors our strategy devolves to communication, so that's the place to focus.
+But the experience for end-users is the app just feels busted.
+What would it take to create a higher quality experience?
+
+Again for unexpected errors our strategy devolves to communication.
 
 The first approach that came to my mind was to flash an error message on the same page.
 But one question is where you would do that, since you can't use Ember.onerror?
@@ -653,6 +654,7 @@ suppose one of the GraphQL field resolvers raises an exception.
 Build Out 2
 Thanks to SalsifyGraphQLServer's BaseController, we'll package this into a GraphQL errors response.
 It will set the returned message to "Internal server error".
+
 But if we display that message in the client it won't
 communicate anything about the specific domain action that prompted the error.
 That's extra relevant for SPAs because the client
@@ -689,15 +691,14 @@ For component actions, those are mostly one-to-one with end-user actions.
 Therefore they make good entrypoints to communicate about,
 so it would make sense to catch exceptions at their top-level.
 
-For component attributes, it's a very similar problem to errors resolving GraphQL queries,
+For unhandled errors in component attributes, it's a very similar problem to errors resolving GraphQL queries,
 where if we tried to catch exceptions at all of them individually it
 would add a ton of code but still not provide the right level of detail to communicate.
-Actually for errors in random component attributes there isn't any clear way to infer what that context even is.
 
-So again I'd suggest re-defining the entrypoint for that case, and say that it's the whole engine or micro-app,
-and use those built-in browser events for unhandled errors.
-Now I admit that's pretty coarse grained, but it's easy,
-and it successfully puts a backstop in place to ensure we have basic communication for any error.
+So again I'd suggest re-defining the entrypoint, and say that it's the whole engine or micro-app.
+As mentioned we can use those built-in browser events, to say something like "Enhanced Content system error."
+Now I admit that's pretty coarse grained,
+but it successfully puts a backstop in place to ensure we have basic communication for any error.
 
 NS
 Because the fundamental idea here is that when a runtime exception happens,
@@ -705,9 +706,9 @@ to achieve a good quality user experience we need to communicate it,
 but moreover, communicating it is usually the only reliable thing we can do.
 
 I see this as a key insight, because historically most programming languages signal errors in a way
-that blurs together different kinds of issues, so it's too easy to lose track of the point
-that either the program knows in advance how to deal with this issue as part of its domain,
-or it doesn't, so its only recourse is to report the issue to humans.
+that blurs together different kinds of issues, so it's too easy to lose track of this point, that
+Either, the program already knows how to deal with this issue as a part of its domain,
+or it does not, so its only recourse is to report the issue to humans.
 
 That drives this design of pushing error handling to the boundaries.
 Because if we understand exceptions this way, then there's absolutely no point messing around
@@ -715,20 +716,22 @@ with error handling in lower-levels of our programs.
 
 But that mindset is different than a lot of real-world code, including what I've written myself,
 where error handling logic is strewn throughout the codebase,
-tackling the problem in whatever way the developer thought of
-in the moment.
-But that doesn't add up to a good overall user experience.
+using whatever technique the developer invented in the moment.
+The problem with that approach is it doesn't add up to a good overall user experience.
 
 The solution is to make sure we deal with exceptions adequately at the boundaries.
 Because then we can have the confidence to not bother with error handling code at lower levels at all.
-Literally, be optimistic, only write code that assumes everything is going to work. It simplifies the codebase.
+Literally, be optimistic, only write code that assumes everything is going to work.
+It ends up simplifying the codebase.
 And when an exception is thrown just handle it at the boundary
 by telling the user that it happened, and report it to Bugsnag.
 
-Now once in awhile we will be calling a function and we know it can throw an exception
+Now this is a talk and therefore I have to oversimplify a little.
+The truth is once in awhile we will be calling a function and we know it can throw an exception
 but our program has a clear way to recover and keep going.
-So in that case I'd say sure, it make sense to wrap a handler around that one call.
-Situations like that are pretty rare though, and it's fine to let them emerge in production use.
+So sure, it make sense to wrap a handler around that one call.
+Honestly situations like that are rare though,
+and it's often better to let them emerge in production use than pre-emptively over-handling them.
 
 This handle-at-the-boundary approach is a good mental framework,
 because it naturally implies a checklist, where each time we add a business feature,
