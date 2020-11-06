@@ -60,24 +60,24 @@ But it's also a deceptive topic, because despite its ordinariness it's not solve
 An ongoing challenge we have in software development is to keep it simple, just solve today's problem.
 That's a response to a very common reality where over-engineering leads to complexity and maintainability problems.
 
-Well as an industry we've done an excellent job of not over-engineering when it comes to error handling.
+Well as an industry, when it comes to error handling, I'd say we have done an excellent job of not over-engineering.
 At least in my experience, the default there is to not really design it.
-The most common approach is to deal with errors case-by-case, in a somewhat inconsistent and incomplete way.
+The most common approach is to deal with errors case-by-case, in a way that is somewhat inconsistent and incomplete.
 
 But I think it's practically the definition of a low-hanging fruit,
 where being slightly more deliberate with error handling
 is a direct way to produce higher quality software.
 
-And that's the origin of this talk. Earlier this year I was working on a random Jira ticket
-and during development I realized there were some potential errors,
-so I was writing some ad-hoc code to deal with that.
-And I was thinking that I didn't want to spend time writing custom code,
-but the only alternative in the scope of my ticket would have been to leave the code in a state
-where these errors would have created a very broken user experience.
+And that's the origin of this talk. Earlier this year I was working on a Jira ticket
+and during development I realized there were some errors that would happen in production.
+They would happen a small percentage of the time, but they definitely would happen,
+and that result in a pretty broken user experience.
 
-So I said, I believe this should be more of a solved problem, but what is the solution?
+So I was writing some code to deal with that, but it felt like it should be more of a solved problem.
+I shouldn't be spending time writing this ad-hoc code.
 
-The aim of this talk is to take on that challenge, and it will do that by covering a few topics:
+I wanted a stronger ethos for how to handle errors. That led to the questions I'll answer in this talk:
+
 * First, what are the actual goals when it comes to handling errors?
 * Then what tools do we have available and what are their tradeoffs?
 * And what is an overall error handling strategy that strives to keep things simple but manages to deliver a quality user experience?
@@ -122,9 +122,8 @@ Let's watch...
 So click, copy, nothing happens, no feedback.
 
 And I want to emphasize that for end users the experience of errors is very frequently like this.
-The software behaves in a way that seems off, but it's subtle. It's hard to understand cause and effect.
-The software just feels sort of frustrating and unreliable,
-but it's difficult for users to even explain the problem.
+The software behaves in a way that seems off, but it's hard to explain.
+It just feels sort of frustrating and unreliable.
 
 NS
 All right then so what error experience would we want?
@@ -174,10 +173,9 @@ NS
 Therefore the first design principle is communicating to humans.
 We cannot implement a fully automated reaction to an unexpected problem.
 
-A good design primarily needs to provide guidance for, how do we inform end users that something went wrong.
-    but also:
-        how do we inform customer support, and PMs,
-        and how do we inform ourselves?
+A good design primarily needs to provide guidance for, how do we inform end users that something went wrong?
+But also: how do we inform customer support, PMs, and ourselves?
+
 
 NS
 Now I want to talk about history.
