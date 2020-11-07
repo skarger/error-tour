@@ -53,16 +53,16 @@ Quality is more of an informal requirement that's up to us in engineering to fig
 And this talk itself is a small example of trying to level-up on quality.
 It's going to do a deep dive on that final quality trait, of error handling.
 
-Handling errors in software is hardly a new topic,
-it's more like an ordinary day-to-day concern.
-But it's also a deceptive topic, because despite its ordinariness it's not solved in practice.
+Handling errors in software is hardly a new topic.
+It's more like an ordinary day-to-day issue.
+But it's also a deceptive topic, because despite its ordinariness it's not truly solved in practice.
+The basic tools for handling errors are readily available,
+you can find a section on how to do it in the docs for any programming language.
+But they don't provide a clear overall solution for a real software system.
 <pause>
-An ongoing challenge we have in software development is to keep it simple, just solve today's problem.
-That's a response to a very common reality where over-engineering leads to complexity and maintainability problems.
-
-Well as an industry, when it comes to error handling, I'd say we have done an excellent job of not over-engineering.
-At least in my experience, the default there is to not really design it.
-The common approach is to deal with errors case-by-case, in a way that is somewhat inconsistent and incomplete.
+When I think of my own experience, across a few different companies,
+I'd say the default is to not really have a design for handling errors.
+The standard approach is to deal with it case-by-case, in a somewhat haphazard way.
 
 But I think it's practically the definition of a low-hanging fruit,
 where being slightly more deliberate with error handling
@@ -609,7 +609,7 @@ Now more than anything else, we would want errors like this reported to Bugsnag 
 can address it and prevent it from happening in the future,
 and we get that from the error reporting library.
 
-But the experience for end-users is the app just feels busted.
+But the experience for end-users is the app just seems busted.
 What would it take to create a higher quality experience?
 
 Again for unexpected errors our strategy devolves to communication.
