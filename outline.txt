@@ -62,7 +62,8 @@ But they don't provide a clear overall solution for a real software system.
 <pause>
 When I think of my own experience, across a few different companies,
 I'd say the default is to not really have a design for handling errors.
-The standard approach is to deal with it case-by-case, in a somewhat haphazard way.
+The common approach is to deal with it case-by-case, in a somewhat haphazard way.
+You'll hear vague best practices floating around but there's no standard technique.
 
 But I think it's practically the definition of a low-hanging fruit,
 where being slightly more deliberate with error handling
@@ -74,9 +75,10 @@ They would happen a small percentage of the time, but they definitely would happ
 and that would result in a pretty broken user experience.
 
 So I was writing some code to deal with that, but it felt like it should be more of a solved problem.
-I shouldn't be spending time writing this ad-hoc code.
+I shouldn't be spending time writing this ad-hoc code,
+but I didn't have a good alternative in the scope of my ticket.
 
-I wanted a stronger ethos for how to handle errors. That led to the questions I'll answer in this talk:
+So I wanted a stronger ethos for how to handle errors, and that led to the questions I'll answer in this talk:
 
 * First, what are the actual goals when it comes to handling errors?
 * Then what tools do we have available and what are their tradeoffs?
@@ -269,10 +271,11 @@ and b never has the chance to undo the DB update,
 so our program ends up in an inconsistent state.
 
 NS
-And for these reasons, a couple recent languages that have become popular decided not to have exceptions.
+And a couple more recent languages that have become popular
+said about that exceptions thing, maybe that wasn't the right idea after all.
 
 Build Out
-Go and Rust went back to signalling errors with return values, like C, just with some twists.
+In Go and Rust the primary way to signal errors is with return values, like C, just with some twists.
 
 NS
 In Go, the big change compared to C is that functions return two distinct values,
@@ -336,7 +339,8 @@ So this can be easier to follow than the control flow jumps you get with excepti
 Now we can adopt a Railway Oriented style in Ruby and JavaScript,
 where we represent errors as data that we return from functions.
 And then for example using TypeScript you can even enforce
-that the code handles the success and error variants.
+that the code handles the success and error variants,
+which you may have seen in our graphql client library.
 
 NS
 But there are some tradeoffs to consider about that.
@@ -422,7 +426,7 @@ if you want to bail out then might as well just throw an exception.
 NS
 A final important consideration is how do we make errors visible to ourselves?
 
-A key challenge is that errors are hard for developers to see.
+A key challenge for developers is that errors are hard to see.
 They happen infrequently, and they often only come out in real-world usage, and they're underreported.
 So mentally it's easy discount their importance.
 
@@ -610,7 +614,7 @@ can address it and prevent it from happening in the future,
 and we get that from the error reporting library.
 
 But the experience for end-users is the app just seems busted.
-What would it take to create a higher quality experience?
+So what would it take to create a higher quality experience?
 
 Again for unexpected errors our strategy devolves to communication.
 
@@ -708,7 +712,7 @@ but moreover, communicating is the only reliable thing we can do.
 
 I see this as a key insight, because historically most programming languages signal errors in a way
 that blurs together different kinds of issues, so it's too easy to lose track of this point, that
-Either, the program already knows how to deal with this issue as a part of its domain,
+Either, the program already knows how to deal with this issue as a part of its domain so it can process it as normal data,
 or it does not, so its only recourse is to report the issue to humans.
 
 That drives this design of pushing error handling to the boundaries.
