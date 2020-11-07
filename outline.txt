@@ -71,7 +71,7 @@ is a direct way to produce higher quality software.
 And that's the origin of this talk. Earlier this year I was working on a Jira ticket
 and during development I realized there were some errors that would happen in production.
 They would happen a small percentage of the time, but they definitely would happen,
-and that result in a pretty broken user experience.
+and that would result in a pretty broken user experience.
 
 So I was writing some code to deal with that, but it felt like it should be more of a solved problem.
 I shouldn't be spending time writing this ad-hoc code.
@@ -79,7 +79,7 @@ I shouldn't be spending time writing this ad-hoc code.
 I wanted a stronger ethos for how to handle errors. That led to the questions I'll answer in this talk:
 
 * First, what are the actual goals when it comes to handling errors?
-* Then, to review, what tools do we have available and what are their tradeoffs?
+* Then what tools do we have available and what are their tradeoffs?
 * And what is an overall error handling strategy that strives to keep things simple but manages to deliver a quality user experience?
 
 NS
@@ -343,7 +343,7 @@ But there are some tradeoffs to consider about that.
 
 When I say errors-as-data I'm lumping together all these styles of signaling errors with return values,
 whether it's a Result type like in Rust, or a C-style error code,
-or any other returned data indicating that an error occurred.
+or any other returned data indicating that an error happened.
 
 The key contrast is that Exceptions forcibly unwind the call stack,
 and errors-as-data do not.
@@ -372,7 +372,7 @@ it happens to be how we're loading data.
 If we don't get a 200-level response it most likely means something has gone wrong
 in a way that we aren't intending to support as a normal case in our domain.
 We can retry if it's a transient network error,
-but otherwise the application just has to bail out at that point.
+but otherwise the application just has to bail out.
 So raising an exception when a backend service sees that 404 response is a sane default.
 
 NS
@@ -606,7 +606,8 @@ That happens because the Amazon quota count is asynchronously fetched,
 and the error thrown in status component happened before it finished processing.
 
 Now more than anything else, we would want errors like this reported to Bugsnag so we
-can address it and prevent it from happening in the future.
+can address it and prevent it from happening in the future,
+and we get that from the error reporting library.
 
 But the experience for end-users is the app just feels busted.
 What would it take to create a higher quality experience?
@@ -703,7 +704,7 @@ but it successfully puts a backstop in place to ensure we have basic communicati
 NS
 Because the fundamental idea here is that when a runtime exception happens,
 to achieve a good quality user experience we need to communicate it,
-but moreover, communicating it is usually the only reliable thing we can do.
+but moreover, communicating is the only reliable thing we can do.
 
 I see this as a key insight, because historically most programming languages signal errors in a way
 that blurs together different kinds of issues, so it's too easy to lose track of this point, that
@@ -715,14 +716,16 @@ Because if we understand exceptions this way, then there's absolutely no point m
 with error handling in lower-levels of our programs.
 
 But that mindset is different than a lot of real-world code, including what I've written myself,
-where error handling logic is strewn throughout the codebase,
-using whatever technique the developer invented in the moment.
-The problem with that approach is it doesn't add up to a good overall user experience.
+where error handling logic is strewn throughout the codebase.
+Sometimes it catches exceptions at some intermediate level,
+but then just logs it and stops, so the overall domain action silently fails.
+Or other times it lets an exception raise with a rough idea that someone upstream should handle it,
+but the only someone is those backstops we have to report it to Bugsnag. There's no application-level handler.
+So we don't add up to a quality experience for end-users.
 
 The solution is to make sure we deal with exceptions adequately at the boundaries.
 Because then we can have the confidence to not bother with error handling code at lower levels at all.
-Literally, be optimistic, only write code that assumes everything is going to work.
-It ends up simplifying the codebase.
+Literally, be optimistic, only write code that assumes everything is going to work. Keep it simple.
 And when an exception is thrown just handle it at the boundary
 by telling the user that it happened, and report it to Bugsnag.
 
@@ -731,7 +734,7 @@ The truth is once in awhile we will be calling a function and we know it can thr
 but our program has a clear way to recover and keep going.
 So sure, it make sense to wrap a handler around that one call.
 Honestly situations like that are rare though,
-and it's often better to let them emerge in production use than pre-emptively over-handling them.
+and it's often better to let them emerge in production use than try to pre-emptively handle them.
 
 This handle-at-the-boundary approach is a good mental framework,
 because it naturally implies a checklist, where each time we add a business feature,
