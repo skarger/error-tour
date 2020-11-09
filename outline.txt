@@ -41,8 +41,8 @@ Build Out 2
 One reason I like this definition is that it helps distinguish
 the meaning of quality from the software's features.
 Surely there is some overlap, like sometimes you'll hear people say that performance is a feature,
-and I truly understand that point,
-but it's different from what we usually understand as domain features.
+and I truly understand and agree with that point,
+but it's different from what we usually think of as domain features.
 
 Also, this helps shed light on why software quality is challenging to attain,
 because it is domain features that our business stakeholders request from us.
@@ -54,7 +54,7 @@ And this talk itself is a small example of trying to level-up on quality.
 It's going to do a deep dive on that final quality trait, of error handling.
 
 Handling errors in software is hardly a new topic.
-It's more like an ordinary day-to-day issue.
+It's more like an ordinary, day-to-day task.
 But it's also a deceptive topic, because despite its ordinariness it's not truly solved in practice.
 The basic tools for handling errors are readily available,
 you can find a section on how to do it in the docs for any programming language.
@@ -63,7 +63,6 @@ But they don't provide a clear overall solution for a real software system.
 When I think of my own experience, across a few different companies,
 I'd say the default is to not really have a design for handling errors.
 The common approach is to deal with it case-by-case, in a somewhat haphazard way.
-You'll hear vague best practices floating around but there's no standard technique.
 
 But I think it's practically the definition of a low-hanging fruit,
 where being slightly more deliberate with error handling
@@ -78,7 +77,8 @@ So I was writing some code to deal with that, but it felt like it should be more
 I shouldn't be spending time writing this ad-hoc code,
 but I didn't have a good alternative in the scope of my ticket.
 
-So I wanted a stronger ethos for how to handle errors, and that led to the questions I'll answer in this talk:
+I wanted a stronger ethos for how to handle errors that would lay out some guidelines I could apply in real work.
+That led to the questions I'll now answer in this talk:
 
 * First, what are the actual goals when it comes to handling errors?
 * Then what tools do we have available and what are their tradeoffs?
@@ -148,7 +148,7 @@ or adding a condition before we execute some logic.
 Build out
 And this process of widening the range of states that the program can handle,
 so that errors become non-errors,
-is one of our day-to-day tasks in software maintenance.
+is one of the day-to-day tasks in software maintenance.
 
 But I want to point out that these techniques are before-the-fact and after-the-fact.
 When we write tests that guard against an error condition,
@@ -495,32 +495,33 @@ That may be an obvious point but in real world development it's easy for it to f
 NS
 That said, just as with the backend libraries, we already do have some built-in default error handling within the main Salsify client app.
 
-What the frontend error handler service provides is when an Ember route tries to load data from the API,
-but the API request returns an error status,
-the client will flash an error message in a bar near the top of the screen.
-It's a bit generic but at least it's providing feedback to the end-user that something went wrong.
+What the Ember error handler service provides is when the client tries to load data from the API,
+but it returns an error,
+we can flash a banner with an error message like on this slide.
+That will happen automatically when loading data from an Ember route,
+and you use it manually when making API requests from a component.
 
-But I want to remind you of those examples I showed at the beginning
+But let me remind you of those examples I showed at the beginning
 with the Enhanced Content UI where the end user
 gets no indication when the API returns errors.
 
-So, in theory Salsify has this built-in feedback in the UI for failed API requests,
-but in practice it's not always working.
+So, in theory we have this built-in UI feedback for failed API requests,
+but it's not applying everywhere.
 
-In those specific examples there are a couple different reasons why it doesn't work
-that come out of low-level details in the Enhanced Content engine.
-So you could blame the EC engine for this.
+In those examples there are a few different reasons why we don't see the error messages,
+and long story short, you could put the blame on the Enhanced Content engine.
 But I hope many of you can understand when we're working on an Ember engine,
-we can't see the true behavior for failed requests when we use
-a normal development workflow with ember serve, or with our engine's automated test suite,
-because that message bar behavior is provided by the main app in dandelion.
-The only way to verify it in a realistic way is to package our engine into dandelion
+we can't see the realistic behavior for failed requests when we use
+a normal development workflow with ember serve or our automated test suite,
+because that message banner behavior is provided by the main app in dandelion.
+The only way to verify it is to package our engine into dandelion
 and test end-to-end, including forcing the backend API server to return a 500.
 
-This is a place where the micro-frontends initiative should help, because a micro-app will
-be able to manage more of its own UI, including its error display, so we won't have the same pitfalls as with an engine.
+This is a place where the micro-frontends initiative should help,
+because a micro-app will be able to manage more of its own UI,
+so we should be able to verify its error display more easily.
 
-Still though, I like the overall idea in the current dandelion client to have a default,
+Still though, I like the overall idea in the current dandelion client,
 where if an API request fails, let's at least provide some visual feedback.
 
 Because it ultimately doesn't matter whether the server indicates errors in a well-formatted way,
@@ -729,22 +730,25 @@ So we don't add up to a quality experience for end-users.
 
 The solution is to make sure we deal with exceptions adequately at the boundaries.
 Because then we can have the confidence to not bother with error handling code at lower levels at all.
-Literally, be optimistic, only write code that assumes everything is going to work. Keep it simple.
+Literally, be optimistic, only write code that assumes everything is going to work.
 And when an exception is thrown just handle it at the boundary
 by telling the user that it happened, and report it to Bugsnag.
 
 Now this is a talk and therefore I have to oversimplify a little.
 The truth is once in awhile we will be calling a function and we know it can throw an exception
-but our program has a clear way to recover and keep going.
-So sure, it make sense to wrap a handler around that one call.
-Honestly situations like that are rare though,
-and it's often better to let them emerge in production use than try to pre-emptively handle them.
+but our program actually has a clear way to recover and keep going.
+And sure, it make sense to wrap a handler around that one call.
+Same in those cases when an exception would put the program into an inconsistent state,
+so it would be best to handle it locally in order to clean up and then re-raise.
+But I see those as small refinements after laying the foundation
+to handle errors at the boundaries.
 
-This handle-at-the-boundary approach is a good mental framework,
+Overall this approach provides the mental framework I was seeking,
 because it naturally implies a checklist, where each time we add a business feature,
 that's the time to ask, what is the entry point here,
 and when it errors how will we communicate to end-users?
-Pull that off and you have high quality error handling.
 
-OK that's it, thank you, and I'm happy to take any questions or comments.
+Pull that off consistently and we have high quality error handling.
+
+OK that's it, thank you. I'm happy to hear any questions or comments.
 
